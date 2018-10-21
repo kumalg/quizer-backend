@@ -1,82 +1,81 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Cors;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
+﻿using Microsoft.AspNetCore.Mvc;
 using quizer_backend.Data;
 using quizer_backend.Data.Entities;
+using quizer_backend.Models;
+using System.Threading.Tasks;
 
 namespace quizer_backend.Controllers {
-    [Produces("application/json")]
-    [Route("api/[controller]")]
-    [EnableCors("CorsPolicy")]
-    [ApiController]
-    [Authorize]
-    public class QuizesController : ControllerBase {
-        private readonly IQuizerRepository _repository;
 
-        public QuizesController(IQuizerRepository repository) {
-            _repository = repository;
-        }
- 
+    [Route("quizes")]
+    public class QuizesController : QuizerApiControllerBase {
+
+        public QuizesController(IQuizerRepository repository) : base(repository) { }
+
+
+        // GETOS
+
         [HttpGet]
-        public ActionResult GetAll() {
-            string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
-            var quizes = _repository.GetAllQuizes(userId);
-
-            JsonSerializerSettings settings = new JsonSerializerSettings {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                Formatting = Formatting.Indented
-            };
-            var json = JsonConvert.SerializeObject(quizes, settings);
-
-            return Content(json, "application/json");
+        public ActionResult GetAllQuizes() {
+            var quizes = _repository.GetAllQuizes(UserId(User));
+            return ToJsonContentResult(quizes);
         }
 
-        [HttpGet("questions")]
-        public ActionResult GetAllQuestions() {
-            var questions = _repository.GetAllQuestions();
-
-            JsonSerializerSettings settings = new JsonSerializerSettings {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                Formatting = Formatting.Indented
-            };
-            var json = JsonConvert.SerializeObject(questions, settings);
-
-            return Content(json, "application/json");
+        [HttpGet("{id}")]
+        public async Task<ActionResult> GetQuizByIdAsync(long id) {
+            var quiz = await _repository.GetQuizByIdAsync(UserId(User), id);
+            return ToJsonContentResult(quiz);
         }
+
+        [HttpGet("{id}/questions")]
+        public async Task<ActionResult> GetQuizQuestionsByQuizId(long id) {
+            var quiz = await _repository.GetQuizQuestionsByQuizIdAsync(UserId(User), id);
+            return ToJsonContentResult(quiz);
+        }
+
+
+        // POSTOS
 
         [HttpPost]
-        public ActionResult<QuizItem> CreateQuiz(QuizItem quiz) {
+        public async Task<ActionResult> CreateQuizAsync(QuizItem quiz) {
             if (!ModelState.IsValid) {
                 return BadRequest(ModelState);
             }
-            quiz.OwnerId = UserId(User);
-            _repository.AddQuiz(quiz);
-            return quiz;
+            var userId = UserId(User);
+            quiz.OwnerId = userId;
+            await _repository.AddQuizAsync(quiz);
+            await _repository.AddQuizAccessAsync(new QuizAccess { Access = QuizAccessEnum.Owner, QuizId = quiz.Id, UserId = userId });
+            return ToJsonContentResult(quiz);
         }
 
-        [HttpPost("{id}/questions")]
-        public ActionResult<QuizQuestionItem> CreateQuizQuestion(long id, QuizQuestionItem question) {
-            if (!ModelState.IsValid) {
-                return BadRequest(ModelState);
-            }
-            _repository.AddQuizQuestion(question);
-            return question;
+
+        // PUTOS
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult> UpdateQuizNameAsync(long id, string name) {
+            var quiz = await _repository.GetQuizByIdAsync(UserId(User), id);
+
+            if (quiz == null)
+                return NotFound();
+            if (string.IsNullOrEmpty(name))
+                return BadRequest();
+
+            quiz.Name = name;
+            await _repository.SaveAllAsync();
+
+            return ToJsonContentResult(quiz);
         }
 
-        private string UserId(ClaimsPrincipal User) => User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
 
-        //[HttpGet("{id}", Name = "GetQuiz")]
-        //public ActionResult<QuizItem> GetById(long id) {
-        //    var item = _context.QuizItems.Find(id);
-        //    if (item == null) {
-        //        return NotFound();
-        //    }
-        //    return item;
-        //}
+        // DELETOS
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> DeleteQuizAsync(long id) {
+            bool deleted = await _repository.DeleteQuizByIdAsync(UserId(User), id);
+
+            if (deleted)
+                return Ok();
+
+            return BadRequest();
+        }
     }
 }
