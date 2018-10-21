@@ -12,28 +12,15 @@ namespace quizer_backend.Data {
             _context = context;
         }
 
-        public IEnumerable<QuizItem> GetAllQuizes(string userId) {
+        public IEnumerable<QuizItem> GetAllMyQuizes(string userId) {
             return _context.QuizItems
                            .Where(q => q.OwnerId == userId)
                            .Include(b => b.QuizQuestions)
                            .ToList();
         }
 
-        public IEnumerable<QuizItem> GetAllQuizes() {
-            return _context.QuizItems
-                           .Include(b => b.QuizQuestions)
-                           .ToList();
-        }
-
-        public IEnumerable<QuizQuestionItem> GetAllQuestions() {
-            return _context.QuizQuestionItems
-                           .Include(b => b.Quiz)
-                           .Include(b => b.Answers)
-                           .ToList();
-        }
-
-        public bool AnyQuizes() {
-            return _context.QuizItems.Any();
+        public QuizItem GetQuizById(long id) {
+            return _context.QuizItems.FirstOrDefault(q => q.Id == id);
         }
 
         public bool SaveAll() {
@@ -56,6 +43,15 @@ namespace quizer_backend.Data {
             question.LastModifiedTime = creationTime;
 
             _context.QuizQuestionItems.Add(question);
+            _context.SaveChanges();
+        }
+
+        public void AddQuizQuestionAnswer(QuizQuestionAnswerItem answer) {
+            long creationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            answer.LastModifiedTime = creationTime;
+
+            _context.QuizQuestionAnswerItems.Add(answer);
             _context.SaveChanges();
         }
     }
