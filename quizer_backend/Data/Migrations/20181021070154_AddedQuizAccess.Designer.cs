@@ -2,15 +2,17 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using quizer_backend.Data;
 
 namespace quizer_backend.Migrations
 {
     [DbContext(typeof(QuizerContext))]
-    partial class QuizerContextModelSnapshot : ModelSnapshot
+    [Migration("20181021070154_AddedQuizAccess")]
+    partial class AddedQuizAccess
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

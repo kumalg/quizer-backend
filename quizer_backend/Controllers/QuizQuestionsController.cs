@@ -1,31 +1,59 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using quizer_backend.Data;
 using quizer_backend.Data.Entities;
-using System.Linq;
-using System.Security.Claims;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace quizer_backend.Controllers {
-    [Authorize]
-    [ApiController]
-    [Route("quiz-questions")]
-    [Produces("application/json")]
-    public class QuizQuestionsController : ControllerBase {
-        private readonly IQuizerRepository _repository;
 
-        public QuizQuestionsController(IQuizerRepository repository) {
-            _repository = repository;
+    [Route("quiz-questions")]
+    public class QuizQuestionsController : QuizerApiControllerBase {
+
+        public QuizQuestionsController(IQuizerRepository repository) : base(repository) { }
+
+
+        // GETOS
+
+        [HttpGet("{id}/answers")]
+        public async Task<ActionResult<List<QuizQuestionAnswerItem>>> GetQuizQuestionAnswers(long id) {
+            var answers = await _repository.GetQuizQuestionAnswersByQuizQuestionIdAsync(UserId(User), id);
+            if (answers == null) NotFound();
+            return ToJsonContentResult(answers);
         }
 
-        private string UserId(ClaimsPrincipal User) => User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+
+        // POSTOS
 
         [HttpPost]
-        public ActionResult<QuizQuestionItem> CreateQuizQuestion(QuizQuestionItem question) {
+        public async Task<ActionResult> CreateQuizQuestionAsync(QuizQuestionItem question) {
             if (!ModelState.IsValid) {
                 return BadRequest(ModelState);
             }
-            _repository.AddQuizQuestion(question);
-            return question;
+            await _repository.AddQuizQuestionAsync(question);
+            return ToJsonContentResult(question);
+        }
+
+
+        // PUTOS
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult> UpdateQuizQuestionValue(long id, string value) {
+            QuizQuestionItem question = await _repository.GetQuizQuestionByIdAsync(UserId(User), id);
+            if (question == null) return NotFound();
+            if (string.IsNullOrEmpty(value)) return BadRequest();
+            question.Value = value;
+            await _repository.SaveAllAsync();
+            return ToJsonContentResult(question);
+        }
+
+
+        // DELETOS
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> DeleteQuizQuestion(long id) {
+            bool deleted = await _repository.DeleteQuizQuestionByIdAsync(UserId(User), id);
+            if (deleted) return Ok();
+            return BadRequest();
         }
     }
 }
