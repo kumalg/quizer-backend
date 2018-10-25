@@ -15,10 +15,8 @@ namespace quizer_backend.Data.Entities {
         public List<QuizQuestionItem> QuizQuestions { get; set; }        
         public List<QuizAccess> Creators { get; set; }
 
-        //[NotMapped]
-
-        //[NotMapped]
-        //public List<string> Users { get; set; }
+        [NotMapped]
+        public string OwnerNickName { get; set; }
     }
     public static class QuizItemExtensions {
         public static QuizItemWIthAccess ToQuizItemWIthAccess(this QuizItem quiz, QuizAccessEnum access) {
