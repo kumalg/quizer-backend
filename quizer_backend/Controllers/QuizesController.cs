@@ -42,11 +42,6 @@ namespace quizer_backend.Controllers {
             return ToJsonContentResult(quizWithOwner);
         }
 
-        [HttpGet("{id}/aha")]
-        public string Aha() {
-            return "aha...";
-        }
-
         [HttpGet("{id}/questions")]
         public async Task<ActionResult> GetQuizQuestionsByQuizId(long id) {
             var quiz = await _repository.GetQuizQuestionsByQuizIdAsync(UserId(User), id);
@@ -131,10 +126,14 @@ namespace quizer_backend.Controllers {
 
 
         // PRIVATE HELPEROS
-                
+
         private async Task<IEnumerable<QuizItem>> IncludeOwnerNickNames(IEnumerable<QuizItem> quizes) {
             var userIds = quizes.Select(q => q.OwnerId)
                                 .Distinct();
+
+            if (userIds == null || !userIds.Any())
+                return quizes;
+
             var search = new GetUsersRequest {
                 SearchEngine = "v3",
                 Query = $"user_id: ({string.Join(" OR ", userIds)})"
