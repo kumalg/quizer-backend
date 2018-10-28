@@ -2,6 +2,7 @@
 using quizer_backend.Data;
 using quizer_backend.Data.Entities;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace quizer_backend.Controllers {
@@ -15,22 +16,40 @@ namespace quizer_backend.Controllers {
         // GETOS
 
         [HttpGet("{id}/answers")]
-        public async Task<ActionResult<List<QuizQuestionAnswerItem>>> GetQuizQuestionAnswers(long id) {
-            var answers = await _repository.GetQuizQuestionAnswersByQuizQuestionIdAsync(UserId(User), id);
-            if (answers == null) NotFound();
-            return ToJsonContentResult(answers);
+        public async Task<ActionResult<List<QuizQuestionAnswer>>> GetQuizQuestionAnswers(long id, long? maxTime = null) {
+            var answers = await _repository.GetQuizQuestionAnswersByQuizQuestionIdAsync(UserId(User), id, maxTime: maxTime);
+
+            if (answers == null)
+                NotFound();
+
+            foreach (var answer in answers)
+                answer.FlatVersionProps(maxTime);
+
+            return ToJsonContentResult(answers.Select(a => new {
+                a.Id,
+                a.QuizQuestionId,
+                a.Value,
+                a.IsCorrect
+            }));
         }
 
 
         // POSTOS
 
         [HttpPost]
-        public async Task<ActionResult> CreateQuizQuestionAsync(QuizQuestionItem question) {
+        public async Task<ActionResult> CreateQuizQuestionAsync(QuizQuestion question) {
             if (!ModelState.IsValid) {
                 return BadRequest(ModelState);
             }
-            await _repository.AddQuizQuestionAsync(question);
-            return ToJsonContentResult(question);
+            var result = await _repository.AddQuizQuestionWithVersionAsync(question);
+            if (!result)
+                return BadRequest();
+
+            return ToJsonContentResult(new {
+                question.Id,
+                question.QuizId,
+                question.Value
+            });
         }
 
 
@@ -38,12 +57,28 @@ namespace quizer_backend.Controllers {
 
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateQuizQuestionValue(long id, string value) {
-            QuizQuestionItem question = await _repository.GetQuizQuestionByIdAsync(UserId(User), id);
-            if (question == null) return NotFound();
-            if (string.IsNullOrEmpty(value)) return BadRequest();
+            QuizQuestion question = await _repository.GetQuizQuestionByIdAsync(UserId(User), id);
+
+            if (string.IsNullOrEmpty(value))
+                return BadRequest();
+            if (question == null)
+                return NotFound();
+
+            var questionVersion = new QuizQuestionVersion {
+                QuizQuestionId = question.Id,
+                Value = value
+            };
+
+            var result = await _repository.AddQuizQuestionVersionAsync(questionVersion);
+            if (!result)
+                return BadRequest();
+
             question.Value = value;
-            await _repository.SaveAllAsync();
-            return ToJsonContentResult(question);
+            return ToJsonContentResult(new {
+                question.Id,
+                question.QuizId,
+                question.Value
+            });
         }
 
 

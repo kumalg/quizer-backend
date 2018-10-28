@@ -14,26 +14,54 @@ namespace quizer_backend.Controllers {
         // POSTOS
 
         [HttpPost]
-        public async Task<ActionResult> CreateQuizQuestionAnswerAsync(QuizQuestionAnswerItem answer) {
+        public async Task<ActionResult> CreateQuizQuestionAnswerAsync(QuizQuestionAnswer answer) {
             if (!ModelState.IsValid) {
                 return BadRequest(ModelState);
             }
-            await _repository.AddQuizQuestionAnswerAsync(answer);
-            return ToJsonContentResult(answer);
+
+            var result = await _repository.AddQuizQuestionAnswerWithVersionAsync(answer);
+            if (!result)
+                return BadRequest();
+
+            return ToJsonContentResult(new {
+                answer.Id,
+                answer.QuizQuestionId,
+                answer.Value,
+                answer.IsCorrect
+            });
         }
 
 
         // PUTOS
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateQuizQuestionAnswer(long id, QuizQuestionAnswerItem newAnswer) {
-            QuizQuestionAnswerItem answer = await _repository.GetQuizQuestionAnswerByIdAsync(UserId(User), id);
-            if (answer == null) return NotFound();
-            if (string.IsNullOrEmpty(answer.Value)) return BadRequest();
+        public async Task<ActionResult> UpdateQuizQuestionAnswer(long id, QuizQuestionAnswer newAnswer) {
+            QuizQuestionAnswer answer = await _repository.GetQuizQuestionAnswerByIdAsync(UserId(User), id);
+
+            if (string.IsNullOrEmpty(newAnswer.Value))
+                return BadRequest();
+            if (answer == null)
+                return NotFound();
+
+            var answerVersion = new QuizQuestionAnswerVersion {
+                QuizQuestionAnswerId = newAnswer.Id,
+                Value = newAnswer.Value,
+                IsCorrect = newAnswer.IsCorrect
+            };
+
+            var result = await _repository.AddQuizQuestionAnswerVersionAsync(answerVersion);
+            if (!result)
+                return BadRequest();
+
             answer.IsCorrect = newAnswer.IsCorrect;
             answer.Value = newAnswer.Value;
-            await _repository.SaveAllAsync();
-            return ToJsonContentResult(answer);
+            
+            return ToJsonContentResult(new {
+                answer.Id,
+                answer.QuizQuestionId,
+                answer.Value,
+                answer.IsCorrect
+            });
         }
 
 

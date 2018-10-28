@@ -43,16 +43,24 @@ namespace quizer_backend.Controllers {
         }
 
         [HttpGet("{id}/questions")]
-        public async Task<ActionResult> GetQuizQuestionsByQuizId(long id) {
-            var quiz = await _repository.GetQuizQuestionsByQuizIdAsync(UserId(User), id);
-            return ToJsonContentResult(quiz);
+        public async Task<ActionResult> GetQuizQuestionsByQuizId(long id, long? maxTime = null) {
+            var questions = await _repository.GetQuizQuestionsByQuizIdAsync(UserId(User), id, maxTime: maxTime);
+
+            questions = questions.Select(q => q.FlatVersionProps(maxTime));
+
+            return ToJsonContentResult(questions.Select(q => new {
+                q.Id,
+                q.QuizId,
+                q.Value,
+                q.CreationTime
+            }));
         }
 
 
         // POSTOS
 
         [HttpPost]
-        public async Task<ActionResult> CreateQuizAsync(QuizItem quiz) {
+        public async Task<ActionResult> CreateQuizAsync(Quiz quiz) {
             if (!ModelState.IsValid) {
                 return BadRequest(ModelState);
             }
@@ -107,6 +115,15 @@ namespace quizer_backend.Controllers {
 
             quiz.Name = name;
             await _repository.SaveAllAsync();
+            //var quizversion = new QuizVersion {
+            //    QuizId = id,
+            //    Name = name
+            //};
+            //var result = await _repository.AddQuizVersionAsync(quizversion);
+            //if (result) {
+            //    quiz.Name = name;
+            //    return ToJsonContentResult(quiz);
+            //}
 
             return ToJsonContentResult(quiz);
         }
@@ -127,7 +144,7 @@ namespace quizer_backend.Controllers {
 
         // PRIVATE HELPEROS
 
-        private async Task<IEnumerable<QuizItem>> IncludeOwnerNickNames(IEnumerable<QuizItem> quizes) {
+        private async Task<IEnumerable<Quiz>> IncludeOwnerNickNames(IEnumerable<Quiz> quizes) {
             var userIds = quizes.Select(q => q.OwnerId)
                                 .Distinct();
 
@@ -147,7 +164,7 @@ namespace quizer_backend.Controllers {
                    select quiz.IncludeOwnerNickNameInQuiz(user?.NickName);
         }
 
-        private async Task<QuizItem> QuizItemWithOwnerNickName(QuizItem quiz) {
+        private async Task<Quiz> QuizItemWithOwnerNickName(Quiz quiz) {
             var client = await _auth0ManagementFactory.GetManagementApiClientAsync();
             var owner = await client.Users.GetAsync(quiz.OwnerId);
         

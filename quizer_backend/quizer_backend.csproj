@@ -6,6 +6,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Data\Migrations\20181028161834_solvingquizanothertables2.cs" />
+    <Compile Remove="Data\Migrations\20181028161834_solvingquizanothertables2.Designer.cs" />
+    <Compile Remove="Data\Migrations\20181028162051_solvingquizanothertables3.cs" />
+    <Compile Remove="Data\Migrations\20181028162051_solvingquizanothertables3.Designer.cs" />
+    <Compile Remove="Data\Migrations\20181028162514_solvingquizanothertables-nowy.cs" />
+    <Compile Remove="Data\Migrations\20181028162514_solvingquizanothertables-nowy.Designer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
