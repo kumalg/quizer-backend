@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using quizer_backend.Data;
-using quizer_backend.Data.Entities;
 using System.Threading.Tasks;
+using quizer_backend.Data.Entities.QuizObject;
+using quizer_backend.Data.Entities.QuizObjectVersion;
 
 namespace quizer_backend.Controllers {
 
@@ -19,16 +20,11 @@ namespace quizer_backend.Controllers {
                 return BadRequest(ModelState);
             }
 
-            var result = await _repository.AddQuizQuestionAnswerWithVersionAsync(answer);
+            var result = await Repository.AddQuizQuestionAnswerWithVersionAsync(answer);
             if (!result)
                 return BadRequest();
 
-            return ToJsonContentResult(new {
-                answer.Id,
-                answer.QuizQuestionId,
-                answer.Value,
-                answer.IsCorrect
-            });
+            return ToJsonContentResult(answer);
         }
 
 
@@ -36,7 +32,7 @@ namespace quizer_backend.Controllers {
 
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateQuizQuestionAnswer(long id, QuizQuestionAnswer newAnswer) {
-            QuizQuestionAnswer answer = await _repository.GetQuizQuestionAnswerByIdAsync(UserId(User), id);
+            QuizQuestionAnswer answer = await Repository.GetQuizQuestionAnswerByIdAsync(UserId(User), id);
 
             if (string.IsNullOrEmpty(newAnswer.Value))
                 return BadRequest();
@@ -49,19 +45,14 @@ namespace quizer_backend.Controllers {
                 IsCorrect = newAnswer.IsCorrect
             };
 
-            var result = await _repository.AddQuizQuestionAnswerVersionAsync(answerVersion);
+            var result = await Repository.AddQuizQuestionAnswerVersionAsync(answerVersion);
             if (!result)
                 return BadRequest();
 
             answer.IsCorrect = newAnswer.IsCorrect;
             answer.Value = newAnswer.Value;
             
-            return ToJsonContentResult(new {
-                answer.Id,
-                answer.QuizQuestionId,
-                answer.Value,
-                answer.IsCorrect
-            });
+            return ToJsonContentResult(answer);
         }
 
 
@@ -69,7 +60,7 @@ namespace quizer_backend.Controllers {
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteQuizQuestionAnswer(long id) {
-            bool deleted = await _repository.DeleteQuizQuestionAnswerByIdAsync(UserId(User), id);
+            bool deleted = await Repository.DeleteQuizQuestionAnswerByIdAsync(UserId(User), id);
             if (deleted) return Ok();
             return BadRequest();
         }

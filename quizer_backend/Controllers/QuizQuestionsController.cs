@@ -4,6 +4,8 @@ using quizer_backend.Data.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using quizer_backend.Data.Entities.QuizObject;
+using quizer_backend.Data.Entities.QuizObjectVersion;
 
 namespace quizer_backend.Controllers {
 
@@ -17,20 +19,15 @@ namespace quizer_backend.Controllers {
 
         [HttpGet("{id}/answers")]
         public async Task<ActionResult<List<QuizQuestionAnswer>>> GetQuizQuestionAnswers(long id, long? maxTime = null) {
-            var answers = await _repository.GetQuizQuestionAnswersByQuizQuestionIdAsync(UserId(User), id, maxTime: maxTime);
+            var answers = await Repository.GetQuizQuestionAnswersByQuizQuestionIdAsync(UserId(User), id, maxTime: maxTime);
 
             if (answers == null)
                 NotFound();
 
-            foreach (var answer in answers)
+            foreach (var answer in answers.AsEnumerable())
                 answer.FlatVersionProps(maxTime);
 
-            return ToJsonContentResult(answers.Select(a => new {
-                a.Id,
-                a.QuizQuestionId,
-                a.Value,
-                a.IsCorrect
-            }));
+            return ToJsonContentResult(answers);
         }
 
 
@@ -41,15 +38,11 @@ namespace quizer_backend.Controllers {
             if (!ModelState.IsValid) {
                 return BadRequest(ModelState);
             }
-            var result = await _repository.AddQuizQuestionWithVersionAsync(question);
+            var result = await Repository.AddQuizQuestionWithVersionAsync(question);
             if (!result)
                 return BadRequest();
 
-            return ToJsonContentResult(new {
-                question.Id,
-                question.QuizId,
-                question.Value
-            });
+            return ToJsonContentResult(question);
         }
 
 
@@ -57,7 +50,7 @@ namespace quizer_backend.Controllers {
 
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateQuizQuestionValue(long id, string value) {
-            QuizQuestion question = await _repository.GetQuizQuestionByIdAsync(UserId(User), id);
+            QuizQuestion question = await Repository.GetQuizQuestionByIdAsync(UserId(User), id);
 
             if (string.IsNullOrEmpty(value))
                 return BadRequest();
@@ -69,16 +62,12 @@ namespace quizer_backend.Controllers {
                 Value = value
             };
 
-            var result = await _repository.AddQuizQuestionVersionAsync(questionVersion);
+            var result = await Repository.AddQuizQuestionVersionAsync(questionVersion);
             if (!result)
                 return BadRequest();
 
             question.Value = value;
-            return ToJsonContentResult(new {
-                question.Id,
-                question.QuizId,
-                question.Value
-            });
+            return ToJsonContentResult(question);
         }
 
 
@@ -86,7 +75,7 @@ namespace quizer_backend.Controllers {
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteQuizQuestion(long id) {
-            bool deleted = await _repository.DeleteQuizQuestionByIdAsync(UserId(User), id);
+            bool deleted = await Repository.DeleteQuizQuestionByIdAsync(UserId(User), id);
             if (deleted) return Ok();
             return BadRequest();
         }

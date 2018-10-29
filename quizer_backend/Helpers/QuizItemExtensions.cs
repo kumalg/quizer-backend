@@ -1,4 +1,5 @@
 ﻿using quizer_backend.Data.Entities;
+using quizer_backend.Data.Entities.QuizObject;
 
 namespace quizer_backend.Helpers {
     public static class QuizItemExtensions {

@@ -3,21 +3,43 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using quizer_backend.Data;
 
 namespace quizer_backend.Migrations
 {
     [DbContext(typeof(QuizerContext))]
-    partial class QuizerContextModelSnapshot : ModelSnapshot
+    [Migration("20181028221636_isdeleted")]
+    partial class isdeleted
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "2.1.4-rtm-31024")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+            modelBuilder.Entity("quizer_backend.Data.Entities.Quiz", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<long>("CreationTime");
+
+                    b.Property<long>("LastModifiedTime");
+
+                    b.Property<string>("Name")
+                        .IsRequired();
+
+                    b.Property<string>("OwnerId");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("QuizItems");
+                });
 
             modelBuilder.Entity("quizer_backend.Data.Entities.QuizAccess", b =>
                 {
@@ -57,27 +79,7 @@ namespace quizer_backend.Migrations
                     b.ToTable("QuizLinks");
                 });
 
-            modelBuilder.Entity("quizer_backend.Data.Entities.QuizObject.Quiz", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<long>("CreationTime");
-
-                    b.Property<long>("LastModifiedTime");
-
-                    b.Property<string>("Name")
-                        .IsRequired();
-
-                    b.Property<string>("OwnerId");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("QuizItems");
-                });
-
-            modelBuilder.Entity("quizer_backend.Data.Entities.QuizObject.QuizQuestion", b =>
+            modelBuilder.Entity("quizer_backend.Data.Entities.QuizQuestion", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -96,7 +98,7 @@ namespace quizer_backend.Migrations
                     b.ToTable("QuizQuestionItems");
                 });
 
-            modelBuilder.Entity("quizer_backend.Data.Entities.QuizObject.QuizQuestionAnswer", b =>
+            modelBuilder.Entity("quizer_backend.Data.Entities.QuizQuestionAnswer", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -115,7 +117,7 @@ namespace quizer_backend.Migrations
                     b.ToTable("QuizQuestionAnswerItems");
                 });
 
-            modelBuilder.Entity("quizer_backend.Data.Entities.QuizObjectVersion.QuizQuestionAnswerVersion", b =>
+            modelBuilder.Entity("quizer_backend.Data.Entities.QuizQuestionAnswerVersion", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -136,7 +138,7 @@ namespace quizer_backend.Migrations
                     b.ToTable("QuizQuestionAnswerVersionItems");
                 });
 
-            modelBuilder.Entity("quizer_backend.Data.Entities.QuizObjectVersion.QuizQuestionVersion", b =>
+            modelBuilder.Entity("quizer_backend.Data.Entities.QuizQuestionVersion", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -163,15 +165,17 @@ namespace quizer_backend.Migrations
 
                     b.Property<long>("CreationTime");
 
-                    b.Property<bool>("IsFinished");
-
                     b.Property<long?>("QuizId");
+
+                    b.Property<long?>("QuizId1");
 
                     b.Property<string>("UserId");
 
                     b.HasKey("Id");
 
                     b.HasIndex("QuizId");
+
+                    b.HasIndex("QuizId1");
 
                     b.ToTable("SolvingQuizItems");
                 });
@@ -218,7 +222,7 @@ namespace quizer_backend.Migrations
 
             modelBuilder.Entity("quizer_backend.Data.Entities.QuizAccess", b =>
                 {
-                    b.HasOne("quizer_backend.Data.Entities.QuizObject.Quiz", "Quiz")
+                    b.HasOne("quizer_backend.Data.Entities.Quiz", "Quiz")
                         .WithMany("Creators")
                         .HasForeignKey("QuizId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -226,39 +230,39 @@ namespace quizer_backend.Migrations
 
             modelBuilder.Entity("quizer_backend.Data.Entities.QuizLink", b =>
                 {
-                    b.HasOne("quizer_backend.Data.Entities.QuizObject.Quiz", "Quiz")
+                    b.HasOne("quizer_backend.Data.Entities.Quiz", "Quiz")
                         .WithMany()
                         .HasForeignKey("QuizId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
-            modelBuilder.Entity("quizer_backend.Data.Entities.QuizObject.QuizQuestion", b =>
+            modelBuilder.Entity("quizer_backend.Data.Entities.QuizQuestion", b =>
                 {
-                    b.HasOne("quizer_backend.Data.Entities.QuizObject.Quiz", "Quiz")
+                    b.HasOne("quizer_backend.Data.Entities.Quiz", "Quiz")
                         .WithMany("QuizQuestions")
                         .HasForeignKey("QuizId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
-            modelBuilder.Entity("quizer_backend.Data.Entities.QuizObject.QuizQuestionAnswer", b =>
+            modelBuilder.Entity("quizer_backend.Data.Entities.QuizQuestionAnswer", b =>
                 {
-                    b.HasOne("quizer_backend.Data.Entities.QuizObject.QuizQuestion", "QuizQuestion")
+                    b.HasOne("quizer_backend.Data.Entities.QuizQuestion", "QuizQuestion")
                         .WithMany("Answers")
                         .HasForeignKey("QuizQuestionId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
-            modelBuilder.Entity("quizer_backend.Data.Entities.QuizObjectVersion.QuizQuestionAnswerVersion", b =>
+            modelBuilder.Entity("quizer_backend.Data.Entities.QuizQuestionAnswerVersion", b =>
                 {
-                    b.HasOne("quizer_backend.Data.Entities.QuizObject.QuizQuestionAnswer", "QuizQuestionAnswer")
+                    b.HasOne("quizer_backend.Data.Entities.QuizQuestionAnswer", "QuizQuestionAnswer")
                         .WithMany("Versions")
                         .HasForeignKey("QuizQuestionAnswerId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
-            modelBuilder.Entity("quizer_backend.Data.Entities.QuizObjectVersion.QuizQuestionVersion", b =>
+            modelBuilder.Entity("quizer_backend.Data.Entities.QuizQuestionVersion", b =>
                 {
-                    b.HasOne("quizer_backend.Data.Entities.QuizObject.QuizQuestion", "QuizQuestion")
+                    b.HasOne("quizer_backend.Data.Entities.QuizQuestion", "QuizQuestion")
                         .WithMany("Versions")
                         .HasForeignKey("QuizQuestionId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -266,15 +270,19 @@ namespace quizer_backend.Migrations
 
             modelBuilder.Entity("quizer_backend.Data.Entities.SolvingQuiz", b =>
                 {
-                    b.HasOne("quizer_backend.Data.Entities.QuizObject.Quiz", "Quiz")
+                    b.HasOne("quizer_backend.Data.Entities.Quiz", "Quiz")
                         .WithMany()
                         .HasForeignKey("QuizId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("quizer_backend.Data.Entities.Quiz")
+                        .WithMany("SolvingQuizes")
+                        .HasForeignKey("QuizId1");
                 });
 
             modelBuilder.Entity("quizer_backend.Data.Entities.SolvingQuizFinishedQuestion", b =>
                 {
-                    b.HasOne("quizer_backend.Data.Entities.QuizObject.QuizQuestion", "QuizQuestion")
+                    b.HasOne("quizer_backend.Data.Entities.QuizQuestion", "QuizQuestion")
                         .WithMany()
                         .HasForeignKey("QuizQuestionId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -292,7 +300,7 @@ namespace quizer_backend.Migrations
                         .HasForeignKey("FinishedQuestionId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("quizer_backend.Data.Entities.QuizObject.QuizQuestionAnswer", "QuizQuestionAnswer")
+                    b.HasOne("quizer_backend.Data.Entities.QuizQuestionAnswer", "QuizQuestionAnswer")
                         .WithMany()
                         .HasForeignKey("QuizQuestionAnswerId")
                         .OnDelete(DeleteBehavior.SetNull);

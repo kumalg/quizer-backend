@@ -1,4 +1,5 @@
-﻿using quizer_backend.Models;
+﻿using quizer_backend.Data.Entities.QuizObject;
+using quizer_backend.Models;
 
 namespace quizer_backend.Data.Entities {
     public class QuizAccess {

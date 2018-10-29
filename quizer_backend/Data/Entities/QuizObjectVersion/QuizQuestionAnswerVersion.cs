@@ -1,4 +1,6 @@
-﻿namespace quizer_backend.Data.Entities {
+﻿using quizer_backend.Data.Entities.QuizObject;
+
+namespace quizer_backend.Data.Entities.QuizObjectVersion {
     public class QuizQuestionAnswerVersion {
         public long Id { get; set; }
         public long QuizQuestionAnswerId { get; set; }

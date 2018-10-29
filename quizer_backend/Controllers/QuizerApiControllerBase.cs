@@ -13,16 +13,16 @@ namespace quizer_backend.Controllers {
     [ApiController]
     [Authorize]
     public class QuizerApiControllerBase : ControllerBase {
-        protected IQuizerRepository _repository;
+        protected readonly IQuizerRepository Repository;
 
         public QuizerApiControllerBase(IQuizerRepository repository) {
-            _repository = repository;
+            Repository = repository;
         }
 
-        protected string UserId(ClaimsPrincipal User) => User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+        protected string UserId(ClaimsPrincipal user) => user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
         protected ContentResult ToJsonContentResult(object item) {
-            JsonSerializerSettings settings = new JsonSerializerSettings {
+            var settings = new JsonSerializerSettings {
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 Formatting = Formatting.Indented
             };

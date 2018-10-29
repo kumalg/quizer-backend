@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+using quizer_backend.Data.Entities.QuizObject;
 
 namespace quizer_backend.Data.Entities {
     public class SolvingQuizFinishedQuestion {

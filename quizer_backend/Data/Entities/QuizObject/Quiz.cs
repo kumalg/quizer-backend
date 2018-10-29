@@ -1,11 +1,11 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using quizer_backend.Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using quizer_backend.Models;
 
-namespace quizer_backend.Data.Entities {
+namespace quizer_backend.Data.Entities.QuizObject {
     public class Quiz {
         public long Id { get; set; }
         [Required]
@@ -14,8 +14,9 @@ namespace quizer_backend.Data.Entities {
         public long CreationTime { get; set; }
         public long LastModifiedTime { get; set; }
         
-        public List<SolvingQuiz> SolvingQuizes { get; set; }
+        [JsonIgnore]
         public List<QuizQuestion> QuizQuestions { get; set; }
+        [JsonIgnore]
         public List<QuizAccess> Creators { get; set; }
 
         [NotMapped]

@@ -1,23 +1,25 @@
-﻿using Auth0.ManagementApi;
+﻿using System;
+using Auth0.ManagementApi;
 using Auth0.ManagementApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using quizer_backend.Data;
 using quizer_backend.Data.Entities;
 using quizer_backend.Helpers;
 using quizer_backend.Services;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using quizer_backend.Data.Entities.QuizObject;
+using quizer_backend.Models;
 
 namespace quizer_backend.Controllers {
 
     [Route("solving-quizes")]
-    public class SolvingQuizController : QuizerApiControllerBase {
+    public class SolvingQuizzesController : QuizerApiControllerBase {
 
         private readonly Auth0ManagementFactory _auth0ManagementFactory;
 
-        public SolvingQuizController(IQuizerRepository repository, Auth0ManagementFactory auth0ManagementFactory) : base(repository) {
+        public SolvingQuizzesController(IQuizerRepository repository, Auth0ManagementFactory auth0ManagementFactory) : base(repository) {
             _auth0ManagementFactory = auth0ManagementFactory;
         }
 
@@ -29,14 +31,14 @@ namespace quizer_backend.Controllers {
 
         [HttpGet]
         public async Task<ActionResult> GetAllSolvingQuizesAsync() {
-            var solvingQuizes = await _repository.GetAllSolvingQuizes(UserId(User));
+            var solvingQuizes = await Repository.GetAllSolvingQuizes(UserId(User));
             var solvingQuizesWithOwners = await IncludeOwnerNickNames(solvingQuizes);
             return ToJsonContentResult(solvingQuizesWithOwners);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult> GetSolvingQuizByIdAsync(long id) {
-            var solvingQuiz = await _repository.GetSolvingQuizByIdAsync(UserId(User), id);
+            var solvingQuiz = await Repository.GetSolvingQuizByIdAsync(UserId(User), id);
             await QuizItemWithOwnerNickName(solvingQuiz.Quiz);
 
             return ToJsonContentResult(solvingQuiz);
@@ -46,23 +48,19 @@ namespace quizer_backend.Controllers {
         public async Task<ActionResult> GetNextQuestionAsync(long id) {
             var userId = UserId(User);
 
-            var solvingQuiz = await _repository.GetSolvingQuizByIdAsync(userId, id);
-            if (solvingQuiz == null || solvingQuiz.QuizId == null)
+            var solvingQuiz = await Repository.GetSolvingQuizByIdAsync(userId, id);
+            if (solvingQuiz?.QuizId == null)
                 return BadRequest();
 
-            var questions = await _repository.GetQuizQuestionsByQuizIdAsync(userId, solvingQuiz.QuizId ?? -1, maxTime: solvingQuiz.CreationTime);
-            List<SolvingQuizFinishedQuestion> finishedQuestions = await _repository.GetSolvingQuizFinishedQuestions(userId, solvingQuiz.Id);
-            var remainingQuestions = questions.Except(finishedQuestions.Select(f => f.QuizQuestion));
+            var questions = await Repository.GetQuizQuestionsByQuizIdAsync(userId, solvingQuiz.QuizId ?? -1, maxTime: solvingQuiz.CreationTime);
+            var finishedQuestions = await Repository.GetSolvingQuizFinishedQuestions(userId, solvingQuiz.Id);
+            var remainingQuestions = questions.AsEnumerable().Except(finishedQuestions.Select(f => f.QuizQuestion));
+            
+            var randomQuestion = remainingQuestions.AsQueryable()
+                                                   .RandomElement(p => true)
+                                                   .FlatVersionProps(solvingQuiz.CreationTime);
 
-            var rand = new Random();
-            var selectedQuestion = remainingQuestions.RandomElement(p => true).FlatVersionProps(solvingQuiz.CreationTime);
-
-            return ToJsonContentResult(new {
-                selectedQuestion.Id,
-                selectedQuestion.QuizId,
-                selectedQuestion.Value,
-                selectedQuestion.CreationTime
-            });
+            return ToJsonContentResult(randomQuestion);
         }
 
 
@@ -77,20 +75,32 @@ namespace quizer_backend.Controllers {
                 UserId = UserId(User),
                 QuizId = quizId
             };
-            await _repository.AddSolvingQuizAsync(solvingQuiz);
+            await Repository.AddSolvingQuizAsync(solvingQuiz);
             return ToJsonContentResult(solvingQuiz);
+        }
+
+        [HttpPost("{solvingQuizId}/answer")]
+        public async Task<ActionResult> AnswerTheQuestion(long solvingQuizId, SolvingQuizAnswer answer) {
+            var question = await Repository.GetQuizQuestionByIdAsync(UserId(User), answer.QuestionId);
+            var answers = question.Answers;
+
+            var correctAnswers = answers.Where(i => i.IsCorrect);
+
+            //throw NotImplementedException();
+
+            return Ok();
         }
 
 
         //// PUTOS
-        
+
 
 
         // DELETOS
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteSolvingQuizAsync(long id) {
-            bool deleted = await _repository.DeleteSolvingQuizAsync(UserId(User), id);
+            var deleted = await Repository.DeleteSolvingQuizAsync(UserId(User), id);
             if (deleted) return Ok();
             return BadRequest();
         }
@@ -98,11 +108,11 @@ namespace quizer_backend.Controllers {
 
         // PRIVATE HELPEROS
 
-        private async Task<IEnumerable<SolvingQuiz>> IncludeOwnerNickNames(IEnumerable<SolvingQuiz> quizes) {
+        private async Task<IEnumerable<SolvingQuiz>> IncludeOwnerNickNames(IQueryable<SolvingQuiz> quizes) {
             var userIds = quizes.Select(q => q.Quiz.OwnerId)
                                 .Distinct();
 
-            if (userIds == null || !userIds.Any())
+            if (!userIds.Any())
                 return quizes;
 
             var search = new GetUsersRequest {
@@ -115,7 +125,7 @@ namespace quizer_backend.Controllers {
             return from quiz in quizes
                    join owner in owners on quiz.Quiz.OwnerId equals owner.UserId into users
                    from user in users.DefaultIfEmpty()
-                   select quiz.IncludeOwnerNickNameInQuiz(user?.NickName);
+                   select quiz.IncludeOwnerNickNameInQuiz(user.NickName);
         }
 
         private async Task<Quiz> QuizItemWithOwnerNickName(Quiz quiz) {

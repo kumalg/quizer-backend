@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities;
+using quizer_backend.Data.Entities.QuizObject;
+using quizer_backend.Data.Entities.QuizObjectVersion;
 
 namespace quizer_backend.Data {
     public class QuizerContext : DbContext {
@@ -67,7 +69,6 @@ namespace quizer_backend.Data {
                 .WithMany()
                 .HasForeignKey(s => s.QuizQuestionId)
                 .OnDelete(DeleteBehavior.SetNull);
-                //.OnDelete(DeleteBehavior.Cascade); niepewny
 
             modelBuilder.Entity<SolvingQuizFinishedQuestion>()
                 .HasOne(q => q.SolvingQuiz)
@@ -81,7 +82,6 @@ namespace quizer_backend.Data {
                 .WithMany()
                 .HasForeignKey(s => s.QuizQuestionAnswerId)
                 .OnDelete(DeleteBehavior.SetNull);
-            //.OnDelete(DeleteBehavior.Cascade); niepewny
 
             modelBuilder.Entity<SolvingQuizFinishedQuestionSelectedAnswer>()
                 .HasOne(s => s.FinishedQuestion)

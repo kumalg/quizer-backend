@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using quizer_backend.Data.Entities.QuizObject;
+using quizer_backend.Data.Entities.QuizObjectVersion;
 
 namespace quizer_backend.Data {
     public class QuizerRepository : IQuizerRepository {
@@ -79,7 +81,7 @@ namespace quizer_backend.Data {
             return answer;
         }
 
-        public async Task<IEnumerable<SolvingQuiz>> GetAllSolvingQuizes(string userId) {
+        public async Task<IQueryable<SolvingQuiz>> GetAllSolvingQuizes(string userId) {
             var solvingQuizes = _context.SolvingQuizItems
                                         .Where(q => q.UserId == userId)
                                         .Include(q => q.Quiz);
@@ -92,14 +94,14 @@ namespace quizer_backend.Data {
             return solvingQuizes;
         }
 
-        public IEnumerable<Quiz> GetAllQuizes(string userId) {
+        public IQueryable<Quiz> GetAllQuizes(string userId) {
             return _context.QuizAccessItems
                            .Where(i => i.UserId == userId && i.Access != QuizAccessEnum.None)
                            .Include(b => b.Quiz)
                            .Select(p => p.Quiz.IncludeAccess(p.Access));
         }
 
-        public async Task<IEnumerable<QuizQuestion>> GetQuizQuestionsByQuizIdAsync(string userId, long id, long? maxTime, long? minTime) {
+        public async Task<IQueryable<QuizQuestion>> GetQuizQuestionsByQuizIdAsync(string userId, long id, long? maxTime, long? minTime) {
             var access = await UserAccessToQuizAsync(userId, id);
 
             if (access == null || access.Access == QuizAccessEnum.None)
@@ -113,7 +115,7 @@ namespace quizer_backend.Data {
             return questions.Include(q => q.Versions);
         }
 
-        public async Task<IEnumerable<QuizQuestionAnswer>> GetQuizQuestionAnswersByQuizQuestionIdAsync(string userId, long id, long? maxTime, long? minTime) {
+        public async Task<IQueryable<QuizQuestionAnswer>> GetQuizQuestionAnswersByQuizQuestionIdAsync(string userId, long id, long? maxTime, long? minTime) {
             var question = await _context.QuizQuestionItems
                                          .FirstOrDefaultAsync(i => i.Id == id);
 
@@ -195,7 +197,7 @@ namespace quizer_backend.Data {
         }
 
         public async Task<bool> AddSolvingQuizAsync(SolvingQuiz solvingQuiz) {
-            solvingQuiz.CreationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); ;
+            solvingQuiz.CreationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             await _context.SolvingQuizItems.AddAsync(solvingQuiz);
             return await SaveAllAsync();
