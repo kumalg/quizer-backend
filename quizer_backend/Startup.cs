@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using quizer_backend.Data;
+using quizer_backend.Data.Repository;
+using quizer_backend.Data.Repository.Interfaces;
 using quizer_backend.Services;
 
 namespace quizer_backend {
@@ -53,6 +55,7 @@ namespace quizer_backend {
                 opt.UseSqlServer(_config.GetConnectionString("QuizerConnectionString"));
             });
             services.AddScoped<IQuizerRepository, QuizerRepository>();
+            services.AddScoped<ILearningQuizzesRepository, LearningQuizzesRepository>();
             services.AddSingleton(new Auth0ManagementFactory(_config));
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }

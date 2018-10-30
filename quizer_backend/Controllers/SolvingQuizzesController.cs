@@ -1,15 +1,15 @@
-﻿using System;
-using Auth0.ManagementApi;
+﻿using Auth0.ManagementApi;
 using Auth0.ManagementApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using quizer_backend.Data;
-using quizer_backend.Data.Entities;
 using quizer_backend.Helpers;
 using quizer_backend.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using quizer_backend.Data.Entities.QuizObject;
+using quizer_backend.Data.Entities.SolvingQuiz;
+using quizer_backend.Data.Repository.Interfaces;
 using quizer_backend.Models;
 
 namespace quizer_backend.Controllers {

@@ -4,8 +4,9 @@ using System.Threading.Tasks;
 using quizer_backend.Data.Entities;
 using quizer_backend.Data.Entities.QuizObject;
 using quizer_backend.Data.Entities.QuizObjectVersion;
+using quizer_backend.Data.Entities.SolvingQuiz;
 
-namespace quizer_backend.Data {
+namespace quizer_backend.Data.Repository.Interfaces {
     public interface IQuizerRepository {
         Task<bool> SaveAllAsync();
 

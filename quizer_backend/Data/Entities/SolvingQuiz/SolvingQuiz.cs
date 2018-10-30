@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
-using quizer_backend.Helpers;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 using quizer_backend.Data.Entities.QuizObject;
+using quizer_backend.Helpers;
 
-namespace quizer_backend.Data.Entities {
+namespace quizer_backend.Data.Entities.SolvingQuiz {
     public class SolvingQuiz {
         public long Id { get; set; }
         public long? QuizId { get; set; }

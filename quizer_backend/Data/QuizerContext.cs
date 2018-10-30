@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities;
+using quizer_backend.Data.Entities.LearningQuiz;
 using quizer_backend.Data.Entities.QuizObject;
 using quizer_backend.Data.Entities.QuizObjectVersion;
+using quizer_backend.Data.Entities.SolvingQuiz;
 
 namespace quizer_backend.Data {
     public class QuizerContext : DbContext {
@@ -20,6 +22,9 @@ namespace quizer_backend.Data {
         public DbSet<SolvingQuiz> SolvingQuizItems { get; set; }
         public DbSet<SolvingQuizFinishedQuestion> SolvingQuizFinishedQuestionItems { get; set; }
         public DbSet<SolvingQuizFinishedQuestionSelectedAnswer> SolvingQuizFinishedQuestionSelectedAnswerItems { get; set; }
+
+        public DbSet<LearningQuiz> LearningQuizItems { get; set; }
+        public DbSet<LearningQuizQuestionReoccurrences> LearningQuizQuestionReoccurrencesItems { get; set; }
 
         public QuizerContext(DbContextOptions<QuizerContext> options) : base(options) { }
 
@@ -87,6 +92,25 @@ namespace quizer_backend.Data {
                 .HasOne(s => s.FinishedQuestion)
                 .WithMany(c => c.SelectedAnswers)
                 .HasForeignKey(s => s.FinishedQuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+            modelBuilder.Entity<LearningQuiz>()
+                .HasOne(s => s.Quiz)
+                .WithMany()
+                .HasForeignKey(s => s.QuizId)
+                .OnDelete(DeleteBehavior.SetNull);
+            
+            modelBuilder.Entity<LearningQuizQuestionReoccurrences>()
+                .HasOne(s => s.QuizQuestion)
+                .WithMany()
+                .HasForeignKey(s => s.QuizQuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LearningQuizQuestionReoccurrences>()
+                .HasOne(q => q.LearningQuiz)
+                .WithMany(s => s.Reoccurrences)
+                .HasForeignKey(s => s.LearningQuizId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

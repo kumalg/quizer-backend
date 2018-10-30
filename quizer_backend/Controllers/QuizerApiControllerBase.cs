@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using quizer_backend.Data;
+using quizer_backend.Data.Repository.Interfaces;
 
 namespace quizer_backend.Controllers {
 

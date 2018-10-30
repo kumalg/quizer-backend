@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using quizer_backend.Data.Entities.QuizObject;
+using quizer_backend.Data.Repository.Interfaces;
 
 namespace quizer_backend.Controllers {
 
