@@ -41,8 +41,10 @@ namespace quizer_backend.Controllers {
         [HttpGet("{id}")]
         public async Task<ActionResult> GetLearningQuizByIdAsync(long id) {
             var learningQuiz = await _learningQuizzesRepository.GetLearningQuizByIdAsync(UserId(User), id, true);
-            await QuizItemWithOwnerNickName(learningQuiz.Quiz);
+            if (learningQuiz == null)
+                return NotFound();
 
+            await QuizItemWithOwnerNickName(learningQuiz.Quiz);
             return ToJsonContentResult(learningQuiz);
         }
 

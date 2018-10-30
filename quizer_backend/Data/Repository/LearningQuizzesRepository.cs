@@ -20,7 +20,7 @@ namespace quizer_backend.Data.Repository {
 
             var learningQuiz = await learningQuizesQuery.SingleOrDefaultAsync();
 
-            if (learningQuiz.QuizId == null)
+            if (learningQuiz?.QuizId == null)
                 return null;
 
             var access = await UserAccessToQuizAsync(userId, learningQuiz.QuizId.Value);
