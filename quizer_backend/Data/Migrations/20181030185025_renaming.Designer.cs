@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using quizer_backend.Data;
 
 namespace quizer_backend.Migrations
 {
     [DbContext(typeof(QuizerContext))]
-    partial class QuizerContextModelSnapshot : ModelSnapshot
+    [Migration("20181030185025_renaming")]
+    partial class renaming
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -160,8 +162,7 @@ namespace quizer_backend.Migrations
 
                     b.Property<long>("QuizQuestionAnswerId");
 
-                    b.Property<string>("Value")
-                        .IsRequired();
+                    b.Property<string>("Value");
 
                     b.HasKey("Id");
 
@@ -180,8 +181,7 @@ namespace quizer_backend.Migrations
 
                     b.Property<long>("QuizQuestionId");
 
-                    b.Property<string>("Value")
-                        .IsRequired();
+                    b.Property<string>("Value");
 
                     b.HasKey("Id");
 

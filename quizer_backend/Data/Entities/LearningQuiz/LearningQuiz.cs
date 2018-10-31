@@ -17,12 +17,12 @@ namespace quizer_backend.Data.Entities.LearningQuiz {
         public long NumberOfBadAnswers { get; set; } = 0;
 
         public virtual Quiz Quiz { get; set; }
-        public List<LearningQuizQuestionReoccurrences> Reoccurrences { get; set; }
+        public List<LearningQuizQuestion> LearningQuizQuestions { get; set; }
     }
 
     public static class LearningQuizExtensions {
         public static LearningQuiz IncludeOwnerNickNameInQuiz(this LearningQuiz learningQuiz, string nickname) {
-            learningQuiz.Quiz.IncludeOwnerNickNameInQuiz(nickname);
+            learningQuiz.Quiz.IncludeOwnerNickName(nickname);
             return learningQuiz;
         }
     }

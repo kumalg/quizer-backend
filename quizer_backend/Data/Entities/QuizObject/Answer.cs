@@ -5,16 +5,16 @@ using Newtonsoft.Json;
 using quizer_backend.Data.Entities.QuizObjectVersion;
 
 namespace quizer_backend.Data.Entities.QuizObject {
-    public class QuizQuestionAnswer {
+    public class Answer {
         public long Id { get; set; }
-        public long QuizQuestionId { get; set; }
+        public long QuestionId { get; set; }
         public long CreationTime { get; set; }
         public bool IsDeleted { get; set; } = false;
 
         [JsonIgnore]
-        public QuizQuestion QuizQuestion { get; set; }
+        public Question Question { get; set; }
         [JsonIgnore]
-        public List<QuizQuestionAnswerVersion> Versions { get; set; }
+        public List<AnswerVersion> Versions { get; set; }
         
         [NotMapped]
         public bool IsCorrect { get; set; }
@@ -23,7 +23,7 @@ namespace quizer_backend.Data.Entities.QuizObject {
     }
 
     public static class QuizQuestionAnswerExtensions {
-        public static QuizQuestionAnswer FlatVersionProps(this QuizQuestionAnswer answer, long? versionMaxTime = null) {
+        public static Answer FlatVersionProps(this Answer answer, long? versionMaxTime = null) {
             var version = versionMaxTime == null
                 ? answer.Versions.OrderByDescending(i => i.CreationTime)
                                  .FirstOrDefault()

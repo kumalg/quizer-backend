@@ -32,25 +32,39 @@ namespace quizer_backend.Controllers {
         // GETOS
 
         [HttpGet]
-        public async Task<ActionResult> GetAllLearningQuizzesAsync() {
-            var learningQuizzes = await _learningQuizzesRepository.GetAllLearningQuizes(UserId(User), true);
+        public async Task<IActionResult> GetAllLearningQuizzesAsync() {
+            var learningQuizzes = await _learningQuizzesRepository.GetAllLearningQuizzes(UserId, true);
             var learningQuizzesWithOwners = await IncludeOwnerNickNames(learningQuizzes);
-            return ToJsonContentResult(learningQuizzesWithOwners);
+            return Ok(learningQuizzesWithOwners);
         }
 
+        //[HttpGet("/current")]
+        //public async Task<IActionResult> GetAllCurrentLearningQuizzesAsync() {
+        //    var learningQuizzes = await _learningQuizzesRepository.GetAllLearningQuizzes(UserId, true);
+        //    var learningQuizzesWithOwners = await IncludeOwnerNickNames(learningQuizzes);
+        //    return Ok(learningQuizzesWithOwners);
+        //}
+
+        //[HttpGet("/finished")]
+        //public async Task<IActionResult> GetAllFinishedLearningQuizzesAsync() {
+        //    var learningQuizzes = await _learningQuizzesRepository.GetAllLearningQuizzes(UserId, true);
+        //    var learningQuizzesWithOwners = await IncludeOwnerNickNames(learningQuizzes);
+        //    return Ok(learningQuizzesWithOwners);
+        //}
+
         [HttpGet("{id}")]
-        public async Task<ActionResult> GetLearningQuizByIdAsync(long id) {
-            var learningQuiz = await _learningQuizzesRepository.GetLearningQuizByIdAsync(UserId(User), id, true);
+        public async Task<IActionResult> GetLearningQuizByIdAsync(long id) {
+            var learningQuiz = await _learningQuizzesRepository.GetLearningQuizByIdAsync(UserId, id, true);
             if (learningQuiz == null)
                 return NotFound();
 
             await QuizItemWithOwnerNickName(learningQuiz.Quiz);
-            return ToJsonContentResult(learningQuiz);
+            return Ok(learningQuiz);
         }
 
         [HttpGet("{id}/next-question")]
-        public async Task<ActionResult> GetNextQuestionAsync(long id) {
-            var userId = UserId(User);
+        public async Task<IActionResult> GetNextQuestionAsync(long id) {
+            var userId = UserId;
 
             var learningQuiz = await _learningQuizzesRepository.GetLearningQuizByIdAsync(userId, id);
             if (learningQuiz?.QuizId == null)
@@ -63,25 +77,23 @@ namespace quizer_backend.Controllers {
                 return BadRequest();
 
             var remainingReoccurrences = reoccurrences.Where(q => q.Reoccurrences > 0);
-            
+
             if (!remainingReoccurrences.Any()) {
-                return ToJsonContentResult(new {
-                    IsFinished = true
-                });
+                return Ok(new { IsFinished = true });
             }
 
             var randomQuestionReoccurrences = remainingReoccurrences.RandomElement(p => true);
 
-            var randomQuestion = await Repository.GetQuizQuestionByIdAsync(userId, randomQuestionReoccurrences.QuizQuestionId, maxVersionTime);
+            var randomQuestion = await Repository.GetQuestionByIdAsync(userId, randomQuestionReoccurrences.QuestionId, maxVersionTime);
 
             randomQuestion.FlatVersionProps(maxVersionTime);
 
-            var answers = await Repository.GetQuizQuestionAnswersByQuizQuestionIdAsync(userId, randomQuestion.Id, maxVersionTime);
+            var answers = await Repository.GetAnswersByQuestionIdAsync(userId, randomQuestion.Id, maxVersionTime);
 
             foreach (var answer in answers)
                 answer.FlatVersionProps(maxVersionTime);
 
-            return ToJsonContentResult(new {
+            return Ok(new {
                 IsFinished = false,
                 Reoccurrences = randomQuestionReoccurrences.Reoccurrences,
                 Question = randomQuestion,
@@ -96,31 +108,31 @@ namespace quizer_backend.Controllers {
         // POSTOS
 
         [HttpPost("{quizId}")]
-        public async Task<ActionResult> CreateLearningQuiz(long quizId) {
+        public async Task<IActionResult> CreateLearningQuiz(long quizId) {
             if (!ModelState.IsValid) {
                 return BadRequest(ModelState);
             }
             var learningQuiz = new LearningQuiz {
-                UserId = UserId(User),
+                UserId = UserId,
                 QuizId = quizId
             };
             await _learningQuizzesRepository.AddLearningQuizAsync(learningQuiz);
-            return ToJsonContentResult(learningQuiz);
+            return Ok(learningQuiz);
         }
 
         [HttpPost("{learningQuizId}/answer")]
-        public async Task<ActionResult> AnswerTheQuestion(long learningQuizId, LearningQuizUserAnswer userAnswer) {
-            var userId = UserId(User);
+        public async Task<IActionResult> AnswerTheQuestion(long learningQuizId, LearningQuizUserAnswer userAnswer) {
+            var userId = UserId;
 
             var learningQuiz = await _learningQuizzesRepository.GetLearningQuizByIdAsync(userId, learningQuizId);
             if (learningQuiz == null)
                 return BadRequest();
 
-            var answers = await Repository.GetQuizQuestionAnswersByQuizQuestionIdAsync(userId, userAnswer.QuizQuestionId, learningQuiz.CreationTime);
+            var answers = await Repository.GetAnswersByQuestionIdAsync(userId, userAnswer.QuizQuestionId, learningQuiz.CreationTime);
             if (answers == null)
                 return BadRequest();
 
-            var questionReoccurrences = await _learningQuizzesRepository.GetLearningQuizQuestionReoccurrences(learningQuizId, userAnswer.QuizQuestionId);
+            var questionReoccurrences = await _learningQuizzesRepository.GetLearningQuizQuestions(learningQuizId, userAnswer.QuizQuestionId);
             if (questionReoccurrences == null)
                 return BadRequest();
             
@@ -144,7 +156,7 @@ namespace quizer_backend.Controllers {
             if (isFinished.Value)
                 await _learningQuizzesRepository.FinishLearningQuiz(userId, learningQuizId);
 
-            return ToJsonContentResult(new {
+            return Ok(new {
                 IsFinished = isFinished,
                 IsCorrect = isCorrect,
                 CorrectAnswers = correctAnswers,

@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities;
 using quizer_backend.Data.Entities.QuizObject;
 using quizer_backend.Data.Entities.QuizObjectVersion;
-using quizer_backend.Data.Entities.SolvingQuiz;
 using quizer_backend.Data.Repository.Interfaces;
 using quizer_backend.Models;
 
@@ -18,38 +16,20 @@ namespace quizer_backend.Data.Repository {
 
         // GETOS
 
-        public async Task<SolvingQuiz> GetSolvingQuizByIdAsync(string userId, long id) {
-            var solvingQuiz = await Context.SolvingQuizItems
-                .Where(s => s.Id == id)
-                .Include(s => s.Quiz)
-                .SingleOrDefaultAsync();
-
-            if (solvingQuiz.QuizId == null)
-                return null;
-
-            var access = await UserAccessToQuizAsync(userId, solvingQuiz.QuizId.Value);
-            if (access == null || access.Access == QuizAccessEnum.None)
-                return null;
-
-            solvingQuiz.Quiz.IncludeAccess(access.Access);
-            return solvingQuiz;
-        }
-        
-
         public async Task<Quiz> GetQuizByIdAsync(string userId, long id) {
             var access = await UserAccessToQuizAsync(userId, id);
             if (access == null || access.Access == QuizAccessEnum.None)
                 return null;
 
-            var quiz = await Context.QuizItems
+            var quiz = await Context.Quizzes
                 .Where(i => i.Id == id)
                 .SingleOrDefaultAsync();
 
             return quiz.IncludeAccess(access.Access);
         }
 
-        public async Task<QuizQuestion> GetQuizQuestionByIdAsync(string userId, long questionId, long? maxTime = null, long? minTime = null) {
-            var question = await Context.QuizQuestionItems
+        public async Task<Question> GetQuestionByIdAsync(string userId, long questionId, long? maxTime = null, long? minTime = null) {
+            var question = await Context.Questions
                 .Where(i => i.Id == questionId)
                 .Include(i => i.Versions)
                 .SingleOrDefaultAsync();
@@ -65,35 +45,24 @@ namespace quizer_backend.Data.Repository {
             return question;
         }
 
-        public async Task<QuizQuestionAnswer> GetQuizQuestionAnswerByIdAsync(string userId, long id, long? maxTime = null, long? minTime = null) {
-            var answer = await Context.QuizQuestionAnswerItems
-                .Where(i => i.Id == id)
-                .Include(i => i.QuizQuestion)
+        public async Task<Answer> GetAnswerByIdAsync(string userId, long answerId, long? maxTime = null, long? minTime = null) {
+            var answer = await Context.Answers
+                .Where(i => i.Id == answerId)
+                .Include(i => i.Question)
                 .Include(i => i.Versions)
                 .SingleOrDefaultAsync();
 
             if (answer == null)
                 return null;
 
-            var access = await UserAccessToQuizAsync(userId, id);
-            if (access == null || access.Access != QuizAccessEnum.None)
+            var access = await UserAccessToQuizAsync(userId, answer.Question.QuizId);
+            if (access == null || access.Access == QuizAccessEnum.None)
                 return null;
 
             return answer;
         }
 
-        public async Task<IQueryable<SolvingQuiz>> GetAllSolvingQuizes(string userId) {
-            var solvingQuizes = Context.SolvingQuizItems
-                .Where(q => q.UserId == userId)
-                .Include(q => q.Quiz);
-
-            foreach (var solvingQuiz in solvingQuizes)
-                await IncludeAccess(solvingQuiz.Quiz, userId);
-            
-            return solvingQuizes;
-        }
-
-        public IQueryable<Quiz> GetAllQuizes(string userId) {
+        public IQueryable<Quiz> GetAllQuizzes(string userId) {
             return Context.QuizAccessItems
                 .Where(i => i.UserId == userId)
                 .Where(i => i.Access != QuizAccessEnum.None)
@@ -101,12 +70,12 @@ namespace quizer_backend.Data.Repository {
                 .Select(p => p.Quiz.IncludeAccess(p.Access));
         }
 
-        public async Task<IQueryable<QuizQuestion>> GetQuizQuestionsByQuizIdAsync(string userId, long id, long? maxTime = null, long? minTime = null) {
+        public async Task<IQueryable<Question>> GetQuestionsByQuizIdAsync(string userId, long id, long? maxTime = null, long? minTime = null) {
             var access = await UserAccessToQuizAsync(userId, id);
             if (access == null || access.Access == QuizAccessEnum.None)
                 return null;
 
-            var questions = Context.QuizQuestionItems.Where(i => i.QuizId == id);
+            var questions = Context.Questions.Where(i => i.QuizId == id);
 
             if (maxTime != null) questions = questions.Where(i => i.CreationTime <= maxTime);
             if (minTime != null) questions = questions.Where(i => i.CreationTime >= minTime);
@@ -114,8 +83,8 @@ namespace quizer_backend.Data.Repository {
             return questions.Include(q => q.Versions);
         }
 
-        public async Task<IQueryable<QuizQuestionAnswer>> GetQuizQuestionAnswersByQuizQuestionIdAsync(string userId, long id, long? maxTime, long? minTime) {
-            var question = await Context.QuizQuestionItems
+        public async Task<IQueryable<Answer>> GetAnswersByQuestionIdAsync(string userId, long id, long? maxTime, long? minTime) {
+            var question = await Context.Questions
                 .Where(i => i.Id == id)
                 .SingleOrDefaultAsync();
 
@@ -126,8 +95,8 @@ namespace quizer_backend.Data.Repository {
             if (access == null || access.Access == QuizAccessEnum.None)
                 return null;
 
-            return Context.QuizQuestionAnswerItems
-                .Where(a => a.QuizQuestionId == question.Id)
+            return Context.Answers
+                .Where(a => a.QuestionId == question.Id)
                 .Include(a => a.Versions);
         }
         
@@ -140,39 +109,39 @@ namespace quizer_backend.Data.Repository {
             quiz.CreationTime = creationTime;
             quiz.LastModifiedTime = creationTime;
 
-            await Context.QuizItems.AddAsync(quiz);
+            await Context.Quizzes.AddAsync(quiz);
             return await SaveAllAsync();
         }
 
-        public async Task<bool> AddQuizQuestionWithVersionAsync(QuizQuestion question) {
+        public async Task<bool> AddQuestionWithVersionAsync(Question question) {
             long creationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             question.CreationTime = creationTime;
 
-            await Context.QuizQuestionItems.AddAsync(question);
+            await Context.Questions.AddAsync(question);
 
-            var questionVersion = new QuizQuestionVersion {
+            var questionVersion = new QuestionVersion {
                 CreationTime = creationTime,
                 QuizQuestionId = question.Id,
                 Value = question.Value
             };
-            await Context.QuizQuestionVersionItems.AddAsync(questionVersion);
+            await Context.QuestionVersions.AddAsync(questionVersion);
 
             return await SaveAllAsync();
         }
 
-        public async Task<bool> AddQuizQuestionAnswerWithVersionAsync(QuizQuestionAnswer answer) {
+        public async Task<bool> AddAnswerWithVersionAsync(Answer answer) {
             long creationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             answer.CreationTime = creationTime;
 
-            await Context.QuizQuestionAnswerItems.AddAsync(answer);
+            await Context.Answers.AddAsync(answer);
 
-            var answerVersion = new QuizQuestionAnswerVersion {
+            var answerVersion = new AnswerVersion {
                 CreationTime = creationTime,
                 QuizQuestionAnswerId = answer.Id,
                 Value = answer.Value,
                 IsCorrect = answer.IsCorrect
             };
-            await Context.QuizQuestionAnswerVersionItems.AddAsync(answerVersion);
+            await Context.AnswerVersions.AddAsync(answerVersion);
 
             return await SaveAllAsync();
         }
@@ -182,28 +151,21 @@ namespace quizer_backend.Data.Repository {
             return await SaveAllAsync();
         }
 
-        public async Task<bool> AddQuizQuestionVersionAsync(QuizQuestionVersion questionVersion) {
+        public async Task<bool> AddQuestionVersionAsync(QuestionVersion questionVersion) {
             questionVersion.CreationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-            await Context.QuizQuestionVersionItems.AddAsync(questionVersion);
+            await Context.QuestionVersions.AddAsync(questionVersion);
             return await SaveAllAsync();
         }
 
-        public async Task<bool> AddQuizQuestionAnswerVersionAsync(QuizQuestionAnswerVersion answerVersion) {
+        public async Task<bool> AddAnswerVersionAsync(AnswerVersion answerVersion) {
             answerVersion.CreationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-            await Context.QuizQuestionAnswerVersionItems.AddAsync(answerVersion);
+            await Context.AnswerVersions.AddAsync(answerVersion);
             return await SaveAllAsync();
         }
 
-        public async Task<bool> AddSolvingQuizAsync(SolvingQuiz solvingQuiz) {
-            solvingQuiz.CreationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-            await Context.SolvingQuizItems.AddAsync(solvingQuiz);
-            return await SaveAllAsync();
-        }
-        
-        
         // DELETOS
 
         public async Task<bool> DeleteQuizByIdAsync(string userId, long id) {
@@ -211,12 +173,12 @@ namespace quizer_backend.Data.Repository {
             if (access == null || access.Access == QuizAccessEnum.None)
                 return false;
 
-            Context.QuizItems.Remove(access.Quiz);
+            Context.Quizzes.Remove(access.Quiz);
             return await SaveAllAsync();
         }
 
-        public async Task<bool> DeleteQuizQuestionByIdAsync(string userId, long id) {
-            var question = await GetQuizQuestionByIdAsync(userId, id);
+        public async Task<bool> DeleteQuestionByIdAsync(string userId, long id) {
+            var question = await GetQuestionByIdAsync(userId, id);
             if (question == null)
                 return false;
 
@@ -224,41 +186,21 @@ namespace quizer_backend.Data.Repository {
             if (access == null || access.Access == QuizAccessEnum.None)
                 return false;
 
-            Context.QuizQuestionItems.Remove(question);
+            Context.Questions.Remove(question);
             return await SaveAllAsync();
         }
 
-        public async Task<bool> DeleteQuizQuestionAnswerByIdAsync(string userId, long id) {
-            var answer = await GetQuizQuestionAnswerByIdAsync(userId, id);
+        public async Task<bool> DeleteAnswerByIdAsync(string userId, long id) {
+            var answer = await GetAnswerByIdAsync(userId, id);
             if (answer == null)
                 return false;
 
-            var access = await UserAccessToQuizAsync(userId, answer.QuizQuestion.QuizId);
+            var access = await UserAccessToQuizAsync(userId, answer.Question.QuizId);
             if (access == null || access.Access == QuizAccessEnum.None)
                 return false;
 
-            Context.QuizQuestionAnswerItems.Remove(answer);
+            Context.Answers.Remove(answer);
             return await SaveAllAsync();
-        }
-
-        public async Task<bool> DeleteSolvingQuizAsync(string userId, long id) {
-            var solvingQuiz = await GetSolvingQuizByIdAsync(userId, id);
-
-            if (solvingQuiz == null)
-                return false;
-
-            Context.SolvingQuizItems.Remove(solvingQuiz);
-            return await SaveAllAsync();
-        }
-
-        public async Task<List<SolvingQuizFinishedQuestion>> GetSolvingQuizFinishedQuestions(string userId, long id, long? maxTime, long? minTime) {
-            var solvingQuiz = await Context.SolvingQuizItems
-                .Where(s => s.Id == id)
-                .Where(s => s.UserId == userId)
-                .Include(s => s.FinishedQuestions)
-                .SingleOrDefaultAsync();
-
-            return solvingQuiz?.FinishedQuestions;
         }
     }
 }

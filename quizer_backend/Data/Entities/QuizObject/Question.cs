@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 using quizer_backend.Data.Entities.QuizObjectVersion;
 
 namespace quizer_backend.Data.Entities.QuizObject {
-    public class QuizQuestion {
+    public class Question {
         public long Id { get; set; }
         public long QuizId { get; set; }
         public long CreationTime { get; set; }
@@ -14,16 +14,16 @@ namespace quizer_backend.Data.Entities.QuizObject {
         [JsonIgnore]
         public Quiz Quiz { get; set; }
         [JsonIgnore]
-        public List<QuizQuestionVersion> Versions { get; set; }
+        public List<QuestionVersion> Versions { get; set; }
         [JsonIgnore]
-        public List<QuizQuestionAnswer> Answers { get; set; }
+        public List<Answer> Answers { get; set; }
 
         [NotMapped]
         public string Value { get; set; }
     }
 
     public static class QuizQuestionExtensions {
-        public static QuizQuestion FlatVersionProps(this QuizQuestion question, long? versionMaxTime = null) {
+        public static Question FlatVersionProps(this Question question, long? versionMaxTime = null) {
             var version = versionMaxTime == null
                 ? question.Versions.OrderByDescending(i => i.CreationTime)
                                    .FirstOrDefault()

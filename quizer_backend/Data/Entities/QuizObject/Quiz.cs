@@ -15,7 +15,7 @@ namespace quizer_backend.Data.Entities.QuizObject {
         public long LastModifiedTime { get; set; }
         
         [JsonIgnore]
-        public List<QuizQuestion> QuizQuestions { get; set; }
+        public List<Question> Questions { get; set; }
         [JsonIgnore]
         public List<QuizAccess> Creators { get; set; }
 

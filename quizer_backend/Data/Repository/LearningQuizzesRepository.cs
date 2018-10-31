@@ -13,7 +13,7 @@ namespace quizer_backend.Data.Repository {
         public LearningQuizzesRepository(QuizerContext context) : base(context) { }
 
         public async Task<LearningQuiz> GetLearningQuizByIdAsync(string userId, long id, bool includeQuiz = false) {
-            var learningQuizesQuery = Context.LearningQuizItems.Where(s => s.Id == id);
+            var learningQuizesQuery = Context.LearningQuizzes.Where(s => s.Id == id);
 
             if (includeQuiz)
                 learningQuizesQuery = learningQuizesQuery.Include(s => s.Quiz);
@@ -33,8 +33,8 @@ namespace quizer_backend.Data.Repository {
             return learningQuiz;
         }
 
-        public async Task<IQueryable<LearningQuiz>> GetAllLearningQuizes(string userId, bool includeQuiz = false) {
-            var learningQuizzes = Context.LearningQuizItems.Where(q => q.UserId == userId);
+        public async Task<IQueryable<LearningQuiz>> GetAllLearningQuizzes(string userId, bool includeQuiz = false) {
+            var learningQuizzes = Context.LearningQuizzes.Where(q => q.UserId == userId);
 
             if (includeQuiz) {
                 learningQuizzes = learningQuizzes.Include(q => q.Quiz);
@@ -45,31 +45,31 @@ namespace quizer_backend.Data.Repository {
             return learningQuizzes;
         }
 
-        public IQueryable<LearningQuizQuestionReoccurrences> GetLearningQuizQuestionsReoccurrences(long learningQuizId) {
-            return Context.LearningQuizQuestionReoccurrencesItems
+        public IQueryable<LearningQuizQuestion> GetLearningQuizQuestionsReoccurrences(long learningQuizId) {
+            return Context.LearningQuizQuestions
                 .Where(q => q.LearningQuizId == learningQuizId);
         }
 
-        public async Task<LearningQuizQuestionReoccurrences> GetLearningQuizQuestionReoccurrences(long learningQuizId, long questionId) {
-            return await Context.LearningQuizQuestionReoccurrencesItems
+        public async Task<LearningQuizQuestion> GetLearningQuizQuestions(long learningQuizId, long questionId) {
+            return await Context.LearningQuizQuestions
                 .Where(q => q.LearningQuizId == learningQuizId)
-                .Where(q => q.QuizQuestionId == questionId)
+                .Where(q => q.QuestionId == questionId)
                 .SingleOrDefaultAsync();
         }
 
         public async Task<bool?> IsLearningQuizFinished(string userId, long learningQuizId) {
-            var learningQuiz = await Context.LearningQuizItems
+            var learningQuiz = await Context.LearningQuizzes
                 .Where(l => l.UserId == userId)
                 .Where(l => l.Id == learningQuizId)
-                .Include(i => i.Reoccurrences)
+                .Include(i => i.LearningQuizQuestions)
                 .SingleOrDefaultAsync();
 
-            var isAnyRemaining = learningQuiz?.Reoccurrences.Any(r => r.Reoccurrences > 0);
+            var isAnyRemaining = learningQuiz?.LearningQuizQuestions.Any(r => r.Reoccurrences > 0);
             return !isAnyRemaining;
         }
 
         public async Task<bool> FinishLearningQuiz(string userId, long learningQuizId) {
-            var learningQuiz = await Context.LearningQuizItems
+            var learningQuiz = await Context.LearningQuizzes
                 .Where(l => l.UserId == userId)
                 .Where(l => l.Id == learningQuizId)
                 .SingleOrDefaultAsync();
@@ -88,18 +88,18 @@ namespace quizer_backend.Data.Repository {
 
             learningQuiz.CreationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-            var questions = await GetQuizQuestionsByQuizIdAsync(learningQuiz.UserId, learningQuiz.QuizId.Value, learningQuiz.CreationTime);
+            var questions = await GetQuestionsByQuizIdAsync(learningQuiz.UserId, learningQuiz.QuizId.Value, learningQuiz.CreationTime);
 
             learningQuiz.NumberOfQuestions = questions.Count();
-            await Context.LearningQuizItems.AddAsync(learningQuiz);
+            await Context.LearningQuizzes.AddAsync(learningQuiz);
 
-            var reoccurrences = questions.Select(q => new LearningQuizQuestionReoccurrences {
+            var reoccurrences = questions.Select(q => new LearningQuizQuestion {
                 LearningQuizId = learningQuiz.Id,
-                QuizQuestionId = q.Id,
+                QuestionId = q.Id,
                 Reoccurrences = 2
             });
 
-            await Context.LearningQuizQuestionReoccurrencesItems.AddRangeAsync(reoccurrences);
+            await Context.LearningQuizQuestions.AddRangeAsync(reoccurrences);
             return await SaveAllAsync();
         }
     }

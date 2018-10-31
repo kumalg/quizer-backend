@@ -8,9 +8,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using quizer_backend.Data;
 using quizer_backend.Data.Repository;
 using quizer_backend.Data.Repository.Interfaces;
+using quizer_backend.Data.SuperRepository;
 using quizer_backend.Services;
 
 namespace quizer_backend {
@@ -54,10 +56,23 @@ namespace quizer_backend {
             services.AddDbContext<QuizerContext>(opt => {
                 opt.UseSqlServer(_config.GetConnectionString("QuizerConnectionString"));
             });
+
             services.AddScoped<IQuizerRepository, QuizerRepository>();
             services.AddScoped<ILearningQuizzesRepository, LearningQuizzesRepository>();
+
+            services.AddScoped<QuizzesRepository, QuizzesRepository>();
+            services.AddScoped<QuestionsRepository, QuestionsRepository>();
+            services.AddScoped<QuestionVersionsRepository, QuestionVersionsRepository>();
+            services.AddScoped<AnswersRepository, AnswersRepository>();
+            services.AddScoped<AnswerVersionsRepository, AnswerVersionsRepository>();
+            services.AddScoped<QuizAccessesRepository, QuizAccessesRepository>();
+
             services.AddSingleton(new Auth0ManagementFactory(_config));
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc()
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
+                .AddJsonOptions(options => {
+                     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                 });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

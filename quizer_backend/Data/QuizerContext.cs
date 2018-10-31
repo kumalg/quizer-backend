@@ -3,42 +3,35 @@ using quizer_backend.Data.Entities;
 using quizer_backend.Data.Entities.LearningQuiz;
 using quizer_backend.Data.Entities.QuizObject;
 using quizer_backend.Data.Entities.QuizObjectVersion;
-using quizer_backend.Data.Entities.SolvingQuiz;
 
 namespace quizer_backend.Data {
     public class QuizerContext : DbContext {
 
-        public DbSet<QuizLink> QuizLinks { get; set; }
-
         public DbSet<QuizAccess> QuizAccessItems { get; set; }
 
-        public DbSet<Quiz> QuizItems { get; set; }
-        public DbSet<QuizQuestion> QuizQuestionItems { get; set; }
-        public DbSet<QuizQuestionAnswer> QuizQuestionAnswerItems { get; set; }
+        public DbSet<Quiz> Quizzes { get; set; }
+        public DbSet<Question> Questions { get; set; }
+        public DbSet<Answer> Answers { get; set; }
         
-        public DbSet<QuizQuestionVersion> QuizQuestionVersionItems { get; set; }
-        public DbSet<QuizQuestionAnswerVersion> QuizQuestionAnswerVersionItems { get; set; }
-
-        public DbSet<SolvingQuiz> SolvingQuizItems { get; set; }
-        public DbSet<SolvingQuizFinishedQuestion> SolvingQuizFinishedQuestionItems { get; set; }
-        public DbSet<SolvingQuizFinishedQuestionSelectedAnswer> SolvingQuizFinishedQuestionSelectedAnswerItems { get; set; }
-
-        public DbSet<LearningQuiz> LearningQuizItems { get; set; }
-        public DbSet<LearningQuizQuestionReoccurrences> LearningQuizQuestionReoccurrencesItems { get; set; }
+        public DbSet<QuestionVersion> QuestionVersions { get; set; }
+        public DbSet<AnswerVersion> AnswerVersions { get; set; }
+        
+        public DbSet<LearningQuiz> LearningQuizzes { get; set; }
+        public DbSet<LearningQuizQuestion> LearningQuizQuestions { get; set; }
 
         public QuizerContext(DbContextOptions<QuizerContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
-            modelBuilder.Entity<QuizQuestion>()
+            modelBuilder.Entity<Question>()
                 .HasOne(s => s.Quiz)
-                .WithMany(c => c.QuizQuestions)
+                .WithMany(c => c.Questions)
                 .HasForeignKey(s => s.QuizId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<QuizQuestionAnswer>()
-                .HasOne(s => s.QuizQuestion)
+            modelBuilder.Entity<Answer>()
+                .HasOne(s => s.Question)
                 .WithMany(c => c.Answers)
-                .HasForeignKey(s => s.QuizQuestionId)
+                .HasForeignKey(s => s.QuestionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
 
@@ -49,67 +42,34 @@ namespace quizer_backend.Data {
                 .OnDelete(DeleteBehavior.Cascade);
             
 
-            modelBuilder.Entity<QuizQuestionVersion>()
-                .HasOne(s => s.QuizQuestion)
+            modelBuilder.Entity<QuestionVersion>()
+                .HasOne(s => s.Question)
                 .WithMany(c => c.Versions)
                 .HasForeignKey(s => s.QuizQuestionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<QuizQuestionAnswerVersion>()
-                .HasOne(s => s.QuizQuestionAnswer)
+            modelBuilder.Entity<AnswerVersion>()
+                .HasOne(s => s.Answer)
                 .WithMany(c => c.Versions)
                 .HasForeignKey(s => s.QuizQuestionAnswerId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-
-            modelBuilder.Entity<SolvingQuiz>()
-                .HasOne(s => s.Quiz)
-                .WithMany()
-                .HasForeignKey(s => s.QuizId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-
-            modelBuilder.Entity<SolvingQuizFinishedQuestion>()
-                .HasOne(s => s.QuizQuestion)
-                .WithMany()
-                .HasForeignKey(s => s.QuizQuestionId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<SolvingQuizFinishedQuestion>()
-                .HasOne(q => q.SolvingQuiz)
-                .WithMany(s => s.FinishedQuestions)
-                .HasForeignKey(s => s.SolvingQuizId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-
-            modelBuilder.Entity<SolvingQuizFinishedQuestionSelectedAnswer>()
-                .HasOne(s => s.QuizQuestionAnswer)
-                .WithMany()
-                .HasForeignKey(s => s.QuizQuestionAnswerId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<SolvingQuizFinishedQuestionSelectedAnswer>()
-                .HasOne(s => s.FinishedQuestion)
-                .WithMany(c => c.SelectedAnswers)
-                .HasForeignKey(s => s.FinishedQuestionId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-
+            
             modelBuilder.Entity<LearningQuiz>()
                 .HasOne(s => s.Quiz)
                 .WithMany()
                 .HasForeignKey(s => s.QuizId)
                 .OnDelete(DeleteBehavior.SetNull);
             
-            modelBuilder.Entity<LearningQuizQuestionReoccurrences>()
-                .HasOne(s => s.QuizQuestion)
+            modelBuilder.Entity<LearningQuizQuestion>()
+                .HasOne(s => s.Question)
                 .WithMany()
-                .HasForeignKey(s => s.QuizQuestionId)
+                .HasForeignKey(s => s.QuestionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<LearningQuizQuestionReoccurrences>()
+            modelBuilder.Entity<LearningQuizQuestion>()
                 .HasOne(q => q.LearningQuiz)
-                .WithMany(s => s.Reoccurrences)
+                .WithMany(s => s.LearningQuizQuestions)
                 .HasForeignKey(s => s.LearningQuizId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
