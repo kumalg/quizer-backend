@@ -2,7 +2,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using Newtonsoft.Json;
-using quizer_backend.Data.Entities.QuizObjectVersion;
 
 namespace quizer_backend.Data.Entities.QuizObject {
     public class Question {

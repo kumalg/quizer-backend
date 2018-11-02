@@ -11,9 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using quizer_backend.Data;
 using quizer_backend.Data.Repository;
-//using quizer_backend.Data.Repository.Interfaces;
 using quizer_backend.Services;
-using LearningQuizzesRepository = quizer_backend.Data.Repository.LearningQuizzesRepository;
 
 namespace quizer_backend {
     public class Startup {
@@ -60,6 +58,7 @@ namespace quizer_backend {
             //services.AddScoped<IQuizerRepository, QuizerRepository>();
             //services.AddScoped<ILearningQuizzesRepository, LearningQuizzesRepository>();
 
+            services.AddScoped<UserSettingsRepository, UserSettingsRepository>();
             services.AddScoped<QuizzesRepository, QuizzesRepository>();
             services.AddScoped<QuestionsRepository, QuestionsRepository>();
             services.AddScoped<QuestionVersionsRepository, QuestionVersionsRepository>();

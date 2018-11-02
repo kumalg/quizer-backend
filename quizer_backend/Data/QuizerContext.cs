@@ -2,7 +2,6 @@
 using quizer_backend.Data.Entities;
 using quizer_backend.Data.Entities.LearningQuiz;
 using quizer_backend.Data.Entities.QuizObject;
-using quizer_backend.Data.Entities.QuizObjectVersion;
 
 namespace quizer_backend.Data {
     public class QuizerContext : DbContext {
@@ -19,7 +18,9 @@ namespace quizer_backend.Data {
         public DbSet<LearningQuiz> LearningQuizzes { get; set; }
         public DbSet<LearningQuizQuestion> LearningQuizQuestions { get; set; }
 
-        public QuizerContext(DbContextOptions<QuizerContext> options) : base(options) { }
+        public DbSet<UserSettings> UserSettings { get; set; }
+
+        public QuizerContext(DbContextOptions options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             modelBuilder.Entity<Question>()
@@ -72,6 +73,10 @@ namespace quizer_backend.Data {
                 .WithMany(s => s.LearningQuizQuestions)
                 .HasForeignKey(s => s.LearningQuizId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+
+            modelBuilder.Entity<UserSettings>()
+                .HasKey(q => q.UserId);
         }
     }
 }

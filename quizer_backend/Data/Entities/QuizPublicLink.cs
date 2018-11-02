@@ -1,8 +1,7 @@
 ﻿//using quizer_backend.Data.Entities.QuizObject;
-//using quizer_backend.Models;
 
 //namespace quizer_backend.Data.Entities {
-//    public class QuizLink {
+//    public class QuizPublicLink {
 //        public long Id { get; set; }
 //        public long QuizId { get; set; }
 //        public string Link { get; set; }

@@ -121,8 +121,28 @@ namespace quizer_backend.Controllers {
             if (!haveOwnerAccess)
                 return NotFound();
 
-            var quiz = await _quizzesRepository.GetById(quizId);
-            if (quiz == null)
+            var client = await GetManagementApiClientAsync();
+            var users = await client.Users.GetUsersByEmailAsync(email);
+
+            if (users == null || users.Count == 0)
+                return NotFound();
+
+            foreach (var user in users) {
+                var access = new QuizAccess {
+                    Access = QuizAccessEnum.Creator,
+                    QuizId = quizId,
+                    UserId = user.UserId
+                };
+                await _quizAccessesRepository.Create(access);
+            }
+
+            return Ok();
+        }
+
+        [HttpPost("{quizId}/give-solver-access")]
+        public async Task<IActionResult> GiveSolverAccess(long quizId, string email) {
+            var haveWriteAccess = await _quizzesRepository.HaveWriteAccessToQuiz(UserId, quizId);
+            if (!haveWriteAccess)
                 return NotFound();
 
             var client = await GetManagementApiClientAsync();
@@ -133,8 +153,8 @@ namespace quizer_backend.Controllers {
 
             foreach (var user in users) {
                 var access = new QuizAccess {
-                    Access = QuizAccessEnum.Creator,
-                    QuizId = quiz.Id,
+                    Access = QuizAccessEnum.Solver,
+                    QuizId = quizId,
                     UserId = user.UserId
                 };
                 await _quizAccessesRepository.Create(access);
@@ -143,12 +163,57 @@ namespace quizer_backend.Controllers {
             return Ok();
         }
 
+        [HttpPost("{quizId}/stop-co-creating")]
+        public async Task<IActionResult> StopCoCreating(long quizId) {
+            var userId = UserId;
+
+            var access = await _quizAccessesRepository.GetQuizAccessForUserAsync(userId, quizId);
+            if (access == null || access.Access != QuizAccessEnum.Creator)
+                return BadRequest();
+
+            access.Access = QuizAccessEnum.Solver;
+
+            var result = await _quizAccessesRepository.Update(access.Id, access);
+            if (result)
+                return Ok();
+
+            return BadRequest();
+        }
+
+        [HttpPost("{quizId}/leave")]
+        public async Task<IActionResult> Leave(long quizId) {
+            var result = await _quizAccessesRepository.Delete(UserId, quizId);
+            if (result)
+                return Ok();
+
+            return BadRequest();
+        }
+
 
         // PUTOS
 
+        //[HttpPut("{quizId}")]
+        //public async Task<IActionResult> UpdateQuizNameAsync(long quizId, string name) {
+        //    if (string.IsNullOrEmpty(name))
+        //        return BadRequest("name cannot be empty");
+
+        //    var haveOwnerAccess = await _quizzesRepository.HaveOwnerAccessToQuiz(UserId, quizId);
+        //    if (!haveOwnerAccess)
+        //        return NotFound();
+
+        //    var quiz = await _quizzesRepository.GetById(quizId);
+        //    if (quiz == null)
+        //        return NotFound();
+
+        //    quiz.Name = name;
+
+        //    await _quizzesRepository.Update(quiz.Id, quiz);
+        //    return Ok(quiz);
+        //}
+
         [HttpPut("{quizId}")]
-        public async Task<IActionResult> UpdateQuizNameAsync(long quizId, string name) {
-            if (string.IsNullOrEmpty(name))
+        public async Task<IActionResult> UpdateQuizAsync(long quizId, Quiz newQuiz) {
+            if (string.IsNullOrEmpty(newQuiz.Name))
                 return BadRequest("name cannot be empty");
 
             var haveOwnerAccess = await _quizzesRepository.HaveOwnerAccessToQuiz(UserId, quizId);
@@ -159,7 +224,9 @@ namespace quizer_backend.Controllers {
             if (quiz == null)
                 return NotFound();
 
-            quiz.Name = name;
+            quiz.Name = newQuiz.Name;
+            quiz.QuestionsInSolvingQuiz = newQuiz.QuestionsInSolvingQuiz;
+            quiz.MinutesInSolvingQuiz = newQuiz.MinutesInSolvingQuiz;
 
             await _quizzesRepository.Update(quiz.Id, quiz);
             return Ok(quiz);

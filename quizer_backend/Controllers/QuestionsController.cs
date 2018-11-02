@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
-using quizer_backend.Data.Entities.QuizObjectVersion;
 using quizer_backend.Data.Repository;
 
 namespace quizer_backend.Controllers {

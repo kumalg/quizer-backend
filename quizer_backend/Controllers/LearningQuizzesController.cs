@@ -18,6 +18,7 @@ namespace quizer_backend.Controllers {
     public class LearningQuizzesController : QuizerApiControllerBase {
 
         private readonly Auth0ManagementFactory _auth0ManagementFactory;
+        private readonly UserSettingsRepository _userSettingsRepository;
         private readonly QuizzesRepository _quizzesRepository;
         private readonly QuizAccessesRepository _quizAccessesRepository;
         private readonly QuestionsRepository _questionsRepository;
@@ -27,6 +28,7 @@ namespace quizer_backend.Controllers {
 
         public LearningQuizzesController(
             QuizzesRepository quizzesRepository,
+            UserSettingsRepository userSettingsRepository,
             QuizAccessesRepository quizAccessesRepository,
             QuestionsRepository questionsRepository,
             AnswersRepository answersRepository,
@@ -35,6 +37,7 @@ namespace quizer_backend.Controllers {
             Auth0ManagementFactory auth0ManagementFactory
         ) {
             _auth0ManagementFactory = auth0ManagementFactory;
+            _userSettingsRepository = userSettingsRepository;
             _quizzesRepository = quizzesRepository;
             _quizAccessesRepository = quizAccessesRepository;
             _questionsRepository = questionsRepository;
@@ -214,11 +217,12 @@ namespace quizer_backend.Controllers {
             };
             await _learningQuizzesRepository.Create(learningQuiz);
 
+            var settings = await _userSettingsRepository.GetByIdOrDefault(UserId);
             var questions = questionsQuery
                 .Select(q => new LearningQuizQuestion {
                     LearningQuizId = learningQuiz.Id,
                     QuestionId = q.Id,
-                    Reoccurrences = 2
+                    Reoccurrences = settings.ReoccurrencesOnStart
                 });
             await _learningQuizQuestionsRepository.CreateMany(questions);
 
@@ -258,6 +262,7 @@ namespace quizer_backend.Controllers {
                 .OrderBy(i => i)
                 .ToList();
 
+            var settings = await _userSettingsRepository.GetByIdOrDefault(UserId);
             var isCorrect = correctAnswers.SequenceEqual(selectedAnswers);
             if (isCorrect) {
                 learningQuiz.NumberOfCorrectAnswers = learningQuiz.NumberOfCorrectAnswers + 1;
@@ -268,7 +273,9 @@ namespace quizer_backend.Controllers {
             }
             else {
                 learningQuiz.NumberOfBadAnswers = learningQuiz.NumberOfBadAnswers + 1;
-                questionReoccurrences.Reoccurrences = questionReoccurrences.Reoccurrences + 1;
+                questionReoccurrences.Reoccurrences = questionReoccurrences.Reoccurrences + settings.ReoccurrencesIfBad;
+                if (questionReoccurrences.Reoccurrences > settings.MaxReoccurrences)
+                    questionReoccurrences.Reoccurrences = settings.MaxReoccurrences;
             }
 
             await _learningQuizQuestionsRepository.Update(questionReoccurrences.Id, questionReoccurrences);

@@ -20,6 +20,14 @@ namespace quizer_backend.Data.Repository {
                 .Select(a => a.Quiz);
         }
 
+        public async Task<bool> ExistAsync(string userId, long quizId) {
+            return await _context.QuizAccessItems
+                .Where(a => a.UserId == userId)
+                .Where(a => a.QuizId == quizId)
+                .Where(a => a.Access != QuizAccessEnum.None)
+                .AnyAsync();
+        }
+
         public async Task<bool> HaveReadAccessToQuizAsync(string userId, long quizId) {
             return await _context.QuizAccessItems
                 .Where(a => a.UserId == userId)

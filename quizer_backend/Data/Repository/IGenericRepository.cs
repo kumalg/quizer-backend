@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 namespace quizer_backend.Data.Repository {
     public interface IGenericRepository<TEntity> {
         IQueryable<TEntity> GetAll();
-        Task<TEntity> GetById(long id);
+        Task<TEntity> GetById(object id);
         Task<bool> Create(TEntity entity);
-        Task<bool> Update(long id, TEntity entity);
-        Task<bool> Delete(long id);
+        Task<bool> Update(object id, TEntity entity);
+        Task<bool> Delete(object id);
     }
 }

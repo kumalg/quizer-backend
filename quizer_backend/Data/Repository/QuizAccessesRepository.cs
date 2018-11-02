@@ -17,5 +17,11 @@ namespace quizer_backend.Data.Repository {
                 .Where(a => a.UserId == userId)
                 .SingleOrDefaultAsync();
         }
+
+        public async Task<bool> Delete(string userId, long quizId) {
+            var entity = await GetQuizAccessForUserAsync(userId, quizId);
+            _context.Set<QuizAccess>().Remove(entity);
+            return await _context.SaveChangesAsync() > 0;
+        }
     }
 }

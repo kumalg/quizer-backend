@@ -13,7 +13,9 @@ namespace quizer_backend.Data.Entities.QuizObject {
         public string OwnerId { get; set; }
         public long CreationTime { get; set; }
         public long LastModifiedTime { get; set; }
-        
+        public long? QuestionsInSolvingQuiz { get; set; }
+        public long? MinutesInSolvingQuiz { get; set; }
+
         [JsonIgnore]
         public List<Question> Questions { get; set; }
         [JsonIgnore]

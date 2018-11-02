@@ -1,4 +1,4 @@
-﻿using quizer_backend.Data.Entities.QuizObjectVersion;
+﻿using quizer_backend.Data.Entities.QuizObject;
 
 namespace quizer_backend.Data.Repository {
     public class QuestionVersionsRepository : GenericRepository<QuestionVersion> {

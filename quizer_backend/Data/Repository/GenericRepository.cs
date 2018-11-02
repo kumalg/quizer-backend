@@ -14,7 +14,7 @@ namespace quizer_backend.Data.Repository {
             return _context.Set<TEntity>().AsNoTracking();
         }
 
-        public async Task<TEntity> GetById(long id) {
+        public async Task<TEntity> GetById(object id) {
             return await _context.Set<TEntity>()
                 .FindAsync(id);
         }
@@ -24,12 +24,12 @@ namespace quizer_backend.Data.Repository {
             return await _context.SaveChangesAsync() > 0;
         }
 
-        public async Task<bool> Update(long id, TEntity entity) {
+        public async Task<bool> Update(object id, TEntity entity) {
             _context.Set<TEntity>().Update(entity);
             return await _context.SaveChangesAsync() > 0;
         }
 
-        public async Task<bool> Delete(long id) {
+        public async Task<bool> Delete(object id) {
             var entity = await GetById(id);
             _context.Set<TEntity>().Remove(entity);
             return await _context.SaveChangesAsync() > 0;
