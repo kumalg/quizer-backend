@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.LearningQuiz;
 using quizer_backend.Data.Entities.QuizObject;
-using quizer_backend.Data.SuperRepository;
+using quizer_backend.Data.Repository;
 using quizer_backend.Helpers;
 using quizer_backend.Models;
 using quizer_backend.Services;

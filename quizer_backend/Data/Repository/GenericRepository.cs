@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
-namespace quizer_backend.Data.SuperRepository {
+namespace quizer_backend.Data.Repository {
     public class GenericRepository<TEntity> : IGenericRepository<TEntity> where TEntity : class {
         private readonly QuizerContext _context;
 

@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 
-namespace quizer_backend.Data.SuperRepository {
+namespace quizer_backend.Data.Repository {
     public interface IGenericRepository<TEntity> {
         IQueryable<TEntity> GetAll();
         Task<TEntity> GetById(long id);

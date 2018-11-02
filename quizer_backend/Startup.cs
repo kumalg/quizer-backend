@@ -10,10 +10,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using quizer_backend.Data;
+using quizer_backend.Data.Repository;
 //using quizer_backend.Data.Repository.Interfaces;
-using quizer_backend.Data.SuperRepository;
 using quizer_backend.Services;
-using LearningQuizzesRepository = quizer_backend.Data.SuperRepository.LearningQuizzesRepository;
+using LearningQuizzesRepository = quizer_backend.Data.Repository.LearningQuizzesRepository;
 
 namespace quizer_backend {
     public class Startup {

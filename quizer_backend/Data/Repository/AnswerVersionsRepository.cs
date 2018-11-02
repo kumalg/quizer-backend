@@ -1,6 +1,6 @@
 ﻿using quizer_backend.Data.Entities.QuizObjectVersion;
 
-namespace quizer_backend.Data.SuperRepository {
+namespace quizer_backend.Data.Repository {
     public class AnswerVersionsRepository : GenericRepository<AnswerVersion> {
         private readonly QuizerContext _context;
 

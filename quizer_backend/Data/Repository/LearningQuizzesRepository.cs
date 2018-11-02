@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using quizer_backend.Data.Entities.LearningQuiz;
 
-namespace quizer_backend.Data.SuperRepository {
+namespace quizer_backend.Data.Repository {
     public class LearningQuizzesRepository : GenericRepository<LearningQuiz> {
         private readonly QuizerContext _context;
 

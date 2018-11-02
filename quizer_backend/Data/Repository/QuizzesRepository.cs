@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
 using quizer_backend.Models;
 
-namespace quizer_backend.Data.SuperRepository {
+namespace quizer_backend.Data.Repository {
     public class QuizzesRepository : GenericRepository<Quiz> {
         private readonly QuizerContext _context;
 
