@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
-using quizer_backend.Data.Repository;
 
 namespace quizer_backend.Data.SuperRepository {
     public class AnswersRepository : GenericRepository<Answer> {
@@ -12,9 +11,22 @@ namespace quizer_backend.Data.SuperRepository {
             _context = context;
         }
 
-        public IQueryable<Answer> GetAllByQuestionId(long questionId, long? maxVersionTime = null) {
-            var query = _context.Answers
-                .Where(q => q.QuestionId == questionId);
+        public async Task<Answer> GetById(long id, bool allowDeleted = false) {
+            if (!allowDeleted) {
+                return await GetAll()
+                    .Where(a => a.Id == id)
+                    .Where(a => !a.IsDeleted)
+                    .SingleOrDefaultAsync();
+            }
+
+            return await base.GetById(id);
+        }
+
+        public IQueryable<Answer> GetAllByQuestionId(long questionId, long? maxVersionTime = null, bool allowDeleted = false) {
+            var query = GetAll().Where(q => q.QuestionId == questionId);
+
+            if (!allowDeleted)
+                query = query.Where(a => !a.IsDeleted);
 
             if (maxVersionTime != null)
                 query = query.Where(q => q.CreationTime <= maxVersionTime);
@@ -28,6 +40,12 @@ namespace quizer_backend.Data.SuperRepository {
                 .Include(a => a.Question)
                 .Select(a => a.Question.QuizId)
                 .SingleOrDefaultAsync();
+        }
+
+        public async Task<bool> SilentDelete(long id) {
+            var entity = await GetById(id);
+            entity.IsDeleted = true;
+            return await Update(id, entity);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using quizer_backend.Data.Entities.QuizObject;
 using quizer_backend.Helpers;
 
@@ -9,6 +10,7 @@ namespace quizer_backend.Data.Entities.LearningQuiz {
         public string UserId { get; set; }
         public long CreationTime { get; set; }
         public bool IsFinished { get; set; } = false;
+        public long? FinishedTime { get; set; }
         public long LearningTime { get; set; } = 0;
 
         public long NumberOfQuestions { get; set; }
@@ -18,6 +20,11 @@ namespace quizer_backend.Data.Entities.LearningQuiz {
 
         public virtual Quiz Quiz { get; set; }
         public List<LearningQuizQuestion> LearningQuizQuestions { get; set; }
+
+        [NotMapped]
+        public double FinishedRatio => IsFinished
+            ? 0
+            : (double)NumberOfLearnedQuestions / NumberOfQuestions;
     }
 
     public static class LearningQuizExtensions {

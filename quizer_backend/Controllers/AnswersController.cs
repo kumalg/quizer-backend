@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
 using quizer_backend.Data.Entities.QuizObjectVersion;
-using quizer_backend.Data.Repository.Interfaces;
 using quizer_backend.Data.SuperRepository;
 
 namespace quizer_backend.Controllers {
@@ -16,20 +15,17 @@ namespace quizer_backend.Controllers {
         private readonly AnswersRepository _answersRepository;
         private readonly AnswerVersionsRepository _answerVersionsRepository;
         private readonly QuestionsRepository _questionsRepository;
-        private readonly QuestionVersionsRepository _questionVersionsRepository;
 
         public AnswersController(
-            IQuizerRepository repository,
             QuizzesRepository quizzesRepository,
             QuestionsRepository questionsRepository,
             QuestionVersionsRepository questionVersionsRepository,
             AnswersRepository answersRepository,
             AnswerVersionsRepository answerVersionsRepository,
             QuizAccessesRepository quizAccessesRepository
-        ) : base(repository) {
+        ) {
             _quizzesRepository = quizzesRepository;
             _questionsRepository = questionsRepository;
-            _questionVersionsRepository = questionVersionsRepository;
             _answersRepository = answersRepository;
             _answerVersionsRepository = answerVersionsRepository;
         }
@@ -76,6 +72,7 @@ namespace quizer_backend.Controllers {
             var answer = await _answersRepository
                 .GetAll()
                 .Where(a => a.Id == answerId)
+                .Where(a => !a.IsDeleted)
                 .Include(a => a.Question)
                 .SingleOrDefaultAsync();
 
@@ -87,6 +84,7 @@ namespace quizer_backend.Controllers {
                 return BadRequest();
 
             var answerVersion = new AnswerVersion {
+                CreationTime = CurrentTime,
                 QuizQuestionAnswerId = newAnswer.Id,
                 Value = newAnswer.Value,
                 IsCorrect = newAnswer.IsCorrect
@@ -111,7 +109,7 @@ namespace quizer_backend.Controllers {
             if (!access)
                 return NotFound();
 
-            var deleted = await _answersRepository.Delete(answerId);
+            var deleted = await _answersRepository.SilentDelete(answerId);
             if (!deleted)
                 return NotFound();
 

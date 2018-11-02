@@ -10,7 +10,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
-using quizer_backend.Data.Repository.Interfaces;
 using quizer_backend.Data.SuperRepository;
 
 namespace quizer_backend.Controllers {
@@ -24,12 +23,11 @@ namespace quizer_backend.Controllers {
         private readonly QuestionsRepository _questionsRepository;
 
         public QuizzesController(
-            IQuizerRepository repository,
             QuizzesRepository quizzesRepository,
             QuestionsRepository questionsRepository,
             QuizAccessesRepository quizAccessesRepository,
             Auth0ManagementFactory auth0ManagementFactory
-        ) : base(repository) {
+        ) {
             _auth0ManagementFactory = auth0ManagementFactory;
             _quizzesRepository = quizzesRepository;
             _questionsRepository = questionsRepository;
@@ -48,7 +46,7 @@ namespace quizer_backend.Controllers {
             var userId = UserId;
 
             foreach (var quiz in quizzes) {
-                var userAccess = await _quizAccessesRepository.GetQuizAccessForUser(userId, quiz.Id);
+                var userAccess = await _quizAccessesRepository.GetQuizAccessForUserAsync(userId, quiz.Id);
                 quiz.IncludeAccess(userAccess.Access);
             }
 
@@ -58,13 +56,13 @@ namespace quizer_backend.Controllers {
 
         [HttpGet("{quizId}")]
         public async Task<IActionResult> GetQuizByIdAsync(long quizId) {
-            var access = await _quizzesRepository.HaveReadAccessToQuiz(UserId, quizId);
+            var access = await _quizzesRepository.HaveReadAccessToQuizAsync(UserId, quizId);
             if (!access)
                 return NotFound();
 
             var quiz = await _quizzesRepository.GetById(quizId);
 
-            var userAccess = await _quizAccessesRepository.GetQuizAccessForUser(UserId, quizId);
+            var userAccess = await _quizAccessesRepository.GetQuizAccessForUserAsync(UserId, quizId);
             quiz.IncludeAccess(userAccess.Access);
 
             var quizWithOwnerNickName = await QuizItemWithOwnerNickName(quiz);
@@ -73,7 +71,7 @@ namespace quizer_backend.Controllers {
 
         [HttpGet("{quizId}/questions")]
         public async Task<IActionResult> GetQuestionsByQuizId(long quizId, long? maxTime = null) {
-            var access = await _quizzesRepository.HaveReadAccessToQuiz(UserId, quizId);
+            var access = await _quizzesRepository.HaveReadAccessToQuizAsync(UserId, quizId);
             if (!access)
                 return NotFound();
 

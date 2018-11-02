@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities;
-using quizer_backend.Data.Repository;
 
 namespace quizer_backend.Data.SuperRepository {
     public class QuizAccessesRepository : GenericRepository<QuizAccess> {
@@ -12,8 +11,8 @@ namespace quizer_backend.Data.SuperRepository {
             _context = context;
         }
 
-        public async Task<QuizAccess> GetQuizAccessForUser(string userId, long quizId) {
-            return await _context.QuizAccessItems
+        public async Task<QuizAccess> GetQuizAccessForUserAsync(string userId, long quizId) {
+            return await GetAll()
                 .Where(a => a.QuizId == quizId)
                 .Where(a => a.UserId == userId)
                 .SingleOrDefaultAsync();

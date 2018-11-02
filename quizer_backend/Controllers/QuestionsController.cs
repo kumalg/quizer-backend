@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
 using quizer_backend.Data.Entities.QuizObjectVersion;
-using quizer_backend.Data.Repository.Interfaces;
 using quizer_backend.Data.SuperRepository;
 
 namespace quizer_backend.Controllers {
@@ -18,13 +17,12 @@ namespace quizer_backend.Controllers {
         private readonly QuestionVersionsRepository _questionVersionsRepository;
 
         public QuestionsController(
-            IQuizerRepository repository,
             QuizzesRepository quizzesRepository,
             QuestionsRepository questionsRepository,
             QuestionVersionsRepository questionVersionsRepository,
             AnswersRepository answersRepository,
             QuizAccessesRepository quizAccessesRepository
-        ) : base(repository) {
+        ) {
             _quizzesRepository = quizzesRepository;
             _questionsRepository = questionsRepository;
             _questionVersionsRepository = questionVersionsRepository;
@@ -38,7 +36,7 @@ namespace quizer_backend.Controllers {
         public async Task<IActionResult> GetQuizQuestionAnswers(long questionId, long? maxVersionTime = null) {
             var question = await _questionsRepository.GetById(questionId);
 
-            var access = await _quizzesRepository.HaveReadAccessToQuiz(UserId, question.QuizId);
+            var access = await _quizzesRepository.HaveReadAccessToQuizAsync(UserId, question.QuizId);
             if (!access)
                 return NotFound();
 
@@ -85,7 +83,12 @@ namespace quizer_backend.Controllers {
             if (string.IsNullOrEmpty(value))
                 return BadRequest("value cannot be empty");
 
-            var question = await _questionsRepository.GetById(questionId);
+            var question = await _questionsRepository
+                .GetAll()
+                .Where(a => a.Id == questionId)
+                .Where(a => !a.IsDeleted)
+                .SingleOrDefaultAsync();
+
             if (question == null)
                 return NotFound();
 
@@ -115,7 +118,7 @@ namespace quizer_backend.Controllers {
             if (!access)
                 return NotFound();
             
-            var deleted = await _questionsRepository.Delete(questionId);
+            var deleted = await _questionsRepository.SilentDelete(questionId);
             if (!deleted)
                 return NotFound();
 

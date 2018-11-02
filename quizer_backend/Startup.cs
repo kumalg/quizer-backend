@@ -10,10 +10,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using quizer_backend.Data;
-using quizer_backend.Data.Repository;
-using quizer_backend.Data.Repository.Interfaces;
+//using quizer_backend.Data.Repository.Interfaces;
 using quizer_backend.Data.SuperRepository;
 using quizer_backend.Services;
+using LearningQuizzesRepository = quizer_backend.Data.SuperRepository.LearningQuizzesRepository;
 
 namespace quizer_backend {
     public class Startup {
@@ -57,8 +57,8 @@ namespace quizer_backend {
                 opt.UseSqlServer(_config.GetConnectionString("QuizerConnectionString"));
             });
 
-            services.AddScoped<IQuizerRepository, QuizerRepository>();
-            services.AddScoped<ILearningQuizzesRepository, LearningQuizzesRepository>();
+            //services.AddScoped<IQuizerRepository, QuizerRepository>();
+            //services.AddScoped<ILearningQuizzesRepository, LearningQuizzesRepository>();
 
             services.AddScoped<QuizzesRepository, QuizzesRepository>();
             services.AddScoped<QuestionsRepository, QuestionsRepository>();
@@ -66,6 +66,9 @@ namespace quizer_backend {
             services.AddScoped<AnswersRepository, AnswersRepository>();
             services.AddScoped<AnswerVersionsRepository, AnswerVersionsRepository>();
             services.AddScoped<QuizAccessesRepository, QuizAccessesRepository>();
+
+            services.AddScoped<LearningQuizzesRepository, LearningQuizzesRepository>();
+            services.AddScoped<LearningQuizQuestionsRepository, LearningQuizQuestionsRepository>();
 
             services.AddSingleton(new Auth0ManagementFactory(_config));
             services.AddMvc()

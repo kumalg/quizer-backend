@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
-using quizer_backend.Data.Repository;
 using quizer_backend.Models;
 
 namespace quizer_backend.Data.SuperRepository {
@@ -21,7 +20,7 @@ namespace quizer_backend.Data.SuperRepository {
                 .Select(a => a.Quiz);
         }
 
-        public async Task<bool> HaveReadAccessToQuiz(string userId, long quizId) {
+        public async Task<bool> HaveReadAccessToQuizAsync(string userId, long quizId) {
             return await _context.QuizAccessItems
                 .Where(a => a.UserId == userId)
                 .Where(a => a.QuizId == quizId)
