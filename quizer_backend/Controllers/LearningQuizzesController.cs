@@ -174,19 +174,21 @@ namespace quizer_backend.Controllers {
             var answers = await _answersRepository
                 .GetAllByQuestionId(randomQuestion.Id, maxVersionTime, true)
                 .Include(a => a.Versions)
+                .Select(a => new {
+                    a.Id,
+                    a.Versions
+                        .Where(b => b.CreationTime <= maxVersionTime)
+                        .OrderByDescending(b => b.CreationTime)
+                        .FirstOrDefault()
+                        .Value
+                })
                 .ToListAsync();
-
-            foreach (var answer in answers)
-                answer.FlatVersionProps(maxVersionTime);
 
             return Ok(new {
                 IsFinished = false,
                 randomQuestionReoccurrences.Reoccurrences,
                 Question = randomQuestion,
-                Answers = answers.Select(a => new {
-                    a.Id,
-                    a.Value
-                })
+                Answers = answers
             });
         }
 
@@ -236,14 +238,7 @@ namespace quizer_backend.Controllers {
                 return BadRequest();
             if (learningQuiz.UserId != UserId)
                 return NotFound();
-
-            var answers = await _answersRepository
-                .GetAllByQuestionId(userAnswer.QuizQuestionId, learningQuiz.CreationTime, true)
-                .Include(a => a.Versions)
-                .ToListAsync();
-            if (answers == null)
-                return BadRequest();
-
+            
             var questionReoccurrences = await _learningQuizQuestionsRepository
                 .GetAllByLearningQuizId(learningQuizId)
                 .Where(q => q.QuestionId == userAnswer.QuizQuestionId)
@@ -252,12 +247,22 @@ namespace quizer_backend.Controllers {
             if (questionReoccurrences == null)
                 return BadRequest();
 
-            var correctAnswers = answers
-                .Select(i => i.FlatVersionProps(learningQuiz.CreationTime))
-                .Where(i => i.IsCorrect)
+            var correctAnswers = await _answersRepository
+                .GetAllByQuestionId(userAnswer.QuizQuestionId, learningQuiz.CreationTime, true)
+                .Include(a => a.Versions)
+                .Select(a => new {
+                    a.Id,
+                    a.Versions
+                        .Where(b => b.CreationTime <= learningQuiz.CreationTime)
+                        .OrderByDescending(b => b.CreationTime)
+                        .FirstOrDefault()
+                        .IsCorrect
+                })
+                .Where(a => a.IsCorrect)
                 .Select(i => i.Id)
                 .OrderBy(i => i)
-                .ToList();
+                .ToListAsync();
+
             var selectedAnswers = userAnswer.SelectedAnswers
                 .OrderBy(i => i)
                 .ToList();
@@ -308,6 +313,7 @@ namespace quizer_backend.Controllers {
                 .GetAllByUserId(UserId)
                 .Where(l => l.Id == id)
                 .AnyAsync();
+
             if (!haveOwnerAccess)
                 return NotFound();
 
