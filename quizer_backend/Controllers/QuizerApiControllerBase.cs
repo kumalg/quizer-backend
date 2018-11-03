@@ -14,7 +14,7 @@ namespace quizer_backend.Controllers {
     public class QuizerApiControllerBase : ControllerBase {
         
         protected string UserId => User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-        protected long CurrentTime => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        protected long CurrentTime => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
     }
 }

@@ -348,7 +348,7 @@ namespace quizer_backend.Controllers {
                 where quiz.QuizId != null
                 join owner in owners on quiz.Quiz.OwnerId equals owner.UserId into users
                 from user in users.DefaultIfEmpty()
-                select quiz.IncludeOwnerNickNameInQuiz(user.NickName);
+                select quiz.IncludeOwnerInQuiz(user);
 
             return yco.Concat(quizes.Where(q => q.QuizId == null));
         }
@@ -358,7 +358,7 @@ namespace quizer_backend.Controllers {
             var owner = await client.Users.GetAsync(quiz.OwnerId);
 
             if (owner != null)
-                quiz.OwnerNickName = owner.NickName;
+                quiz.IncludeOwner(owner);
 
             return quiz;
         }

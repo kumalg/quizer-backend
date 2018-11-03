@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using Auth0.ManagementApi.Models;
 using quizer_backend.Data.Entities.QuizObject;
 using quizer_backend.Helpers;
 
@@ -25,6 +26,12 @@ namespace quizer_backend.Data.Entities.LearningQuiz {
         public double FinishedRatio => IsFinished
             ? 0
             : (double)NumberOfLearnedQuestions / NumberOfQuestions;
+
+        public LearningQuiz IncludeOwnerInQuiz(User user) {
+            if (Quiz == null) return this;
+            Quiz.IncludeOwner(user);
+            return this;
+        }
     }
 
     public static class LearningQuizExtensions {

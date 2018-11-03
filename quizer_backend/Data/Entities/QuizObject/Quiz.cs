@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Auth0.ManagementApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using quizer_backend.Models;
@@ -23,8 +24,16 @@ namespace quizer_backend.Data.Entities.QuizObject {
 
         [NotMapped]
         public string OwnerNickName { get; set; }
+        [NotMapped]
+        public string OwnerPicture { get; set; }
         [NotMapped, JsonConverter(typeof(StringEnumConverter))]
         public QuizAccessEnum Access { get; set; }
+
+        public Quiz IncludeOwner(User user) {
+            OwnerPicture = user.Picture;
+            OwnerNickName = user.NickName;
+            return this;
+        }
     }
 
     public static class QuizItemExtensions {

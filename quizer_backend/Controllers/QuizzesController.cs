@@ -269,15 +269,15 @@ namespace quizer_backend.Controllers {
             return from quiz in quizzes
                    join owner in owners on quiz.OwnerId equals owner.UserId into users
                    from user in users.DefaultIfEmpty()
-                   select quiz.IncludeOwnerNickName(user.NickName);
+                   select quiz.IncludeOwner(user);
         }
 
         private async Task<Quiz> QuizItemWithOwnerNickName(Quiz quiz) {
             var client = await _auth0ManagementFactory.GetManagementApiClientAsync();
             var owner = await client.Users.GetAsync(quiz.OwnerId);
-        
+
             if (owner != null)
-                quiz.IncludeOwnerNickName(owner.NickName);
+                quiz.IncludeOwner(owner);
 
             return quiz;
         }
