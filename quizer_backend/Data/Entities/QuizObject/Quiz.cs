@@ -14,14 +14,18 @@ namespace quizer_backend.Data.Entities.QuizObject {
         public string OwnerId { get; set; }
         public long CreationTime { get; set; }
         public long LastModifiedTime { get; set; }
-        public long? QuestionsInSolvingQuiz { get; set; }
-        public long? MinutesInSolvingQuiz { get; set; }
+        public int? QuestionsInSolvingQuiz { get; set; }
+        public int? MinutesInSolvingQuiz { get; set; }
 
         [JsonIgnore]
         public List<Question> Questions { get; set; }
         [JsonIgnore]
         public List<QuizAccess> Creators { get; set; }
 
+        [NotMapped]
+        public long? MillisecondsInSolvingQuiz => MinutesInSolvingQuiz == null
+            ? null
+            : (long?)((long)MinutesInSolvingQuiz.Value * 60 * 1000);
         [NotMapped]
         public string OwnerNickName { get; set; }
         [NotMapped]

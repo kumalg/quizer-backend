@@ -1,4 +1,5 @@
-﻿using Auth0.ManagementApi;
+﻿using System;
+using Auth0.ManagementApi;
 using Auth0.ManagementApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using quizer_backend.Data.Entities;
@@ -87,6 +88,74 @@ namespace quizer_backend.Controllers {
                 });
 
             return Ok(questions);
+        }
+
+        [HttpGet("{id}/solve")]
+        public async Task<IActionResult> GetRandomQuestionsWithQuizByQuizIdAsync(long id) {
+            var userId = UserId;
+            var haveReadAccess = await _quizzesRepository.HaveReadAccessToQuizAsync(userId, id);
+            if (!haveReadAccess)
+                return Forbid();
+
+            var random = new Random();
+            var quiz = await _quizzesRepository.GetById(id);
+            await QuizItemWithOwnerNickName(quiz);
+
+            var randomQuestionsQuery = _questionsRepository
+                .GetAllByQuizId(id)
+                .OrderBy(a => random.Next())
+                .AsQueryable();
+
+            var questionsInDatabase = await randomQuestionsQuery.CountAsync();
+
+            if (quiz.QuestionsInSolvingQuiz != null) {
+                randomQuestionsQuery = randomQuestionsQuery
+                    .Take(quiz.QuestionsInSolvingQuiz.Value);
+            }
+
+            var randomQuestions = await randomQuestionsQuery
+                .Include(q => q.Versions)
+                .Include(q => q.Answers)
+                .ThenInclude(a => a.Versions)
+                .Select(q => new {
+                    q.Id,
+                    q.Versions
+                        .OrderByDescending(v => v.CreationTime)
+                        .FirstOrDefault()
+                        .Value,
+                    Answers = q.Answers
+                        .Where(a => !a.IsDeleted)
+                        .OrderBy(g => random.Next())
+                        .Select(a => new {
+                            a.Id,
+                            a.Versions
+                                .OrderByDescending(v => v.CreationTime)
+                                .FirstOrDefault()
+                                .Value
+                        })
+                })
+                .ToListAsync();
+
+            var creationTime = CurrentTime;
+
+            return Ok(new {
+                SolvingQuiz = new {
+                    Quiz = quiz,
+                    QuestionsInDatabase = questionsInDatabase,
+                    QuestionsInSolvingQuiz = randomQuestions.Count,
+                    Questions = randomQuestions,
+                    CreatedTime = creationTime
+                },
+                SolvedQuizTemplate = new UserSolvedQuiz {
+                    QuizId = quiz.Id,
+                    CreatedTime = creationTime,
+                    SolvingTime = 0,
+                    MaxSolvingTime = quiz.MillisecondsInSolvingQuiz,
+                    UserSolvedQuestions = randomQuestions
+                        .Select(q => new UserSolvedQuizQuestion { QuestionId = q.Id })
+                        .ToList()
+                }
+            });
         }
 
 

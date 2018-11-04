@@ -1,141 +1,148 @@
-﻿//using Auth0.ManagementApi;
-//using Auth0.ManagementApi.Models;
-//using Microsoft.AspNetCore.Mvc;
-//using quizer_backend.Data;
-//using quizer_backend.Helpers;
-//using quizer_backend.Services;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Threading.Tasks;
-//using quizer_backend.Data.Entities.QuizObject;
-//using quizer_backend.Data.Entities.SolvingQuiz;
-//using quizer_backend.Data.Repository.Interfaces;
-//using quizer_backend.Models;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Auth0.ManagementApi;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using quizer_backend.Data.Repository;
+using quizer_backend.Models;
+using quizer_backend.Services;
 
-//namespace quizer_backend.Controllers {
+namespace quizer_backend.Controllers {
 
-//    [Route("solving-quizes")]
-//    public class SolvingQuizzesController : QuizerApiControllerBase {
+    [Route("solving-quizzes")]
+    public class SolvingQuizzesController : QuizerApiControllerBase {
 
-//        private readonly Auth0ManagementFactory _auth0ManagementFactory;
+        private readonly Auth0ManagementFactory _auth0ManagementFactory;
+        private readonly UserSettingsRepository _userSettingsRepository;
+        private readonly QuizzesRepository _quizzesRepository;
+        private readonly QuizAccessesRepository _quizAccessesRepository;
+        private readonly QuestionsRepository _questionsRepository;
+        private readonly AnswersRepository _answersRepository;
+        private readonly LearningQuizzesRepository _learningQuizzesRepository;
+        private readonly LearningQuizQuestionsRepository _learningQuizQuestionsRepository;
 
-//        public SolvingQuizzesController(IQuizerRepository repository, Auth0ManagementFactory auth0ManagementFactory) : base(repository) {
-//            _auth0ManagementFactory = auth0ManagementFactory;
-//        }
+        public SolvingQuizzesController(
+            QuizzesRepository quizzesRepository,
+            UserSettingsRepository userSettingsRepository,
+            QuizAccessesRepository quizAccessesRepository,
+            QuestionsRepository questionsRepository,
+            AnswersRepository answersRepository,
+            LearningQuizzesRepository learningQuizzesRepository,
+            LearningQuizQuestionsRepository learningQuizQuestionsRepository,
+            Auth0ManagementFactory auth0ManagementFactory
+        ) {
+            _auth0ManagementFactory = auth0ManagementFactory;
+            _userSettingsRepository = userSettingsRepository;
+            _quizzesRepository = quizzesRepository;
+            _quizAccessesRepository = quizAccessesRepository;
+            _questionsRepository = questionsRepository;
+            _answersRepository = answersRepository;
+            _learningQuizzesRepository = learningQuizzesRepository;
+            _learningQuizQuestionsRepository = learningQuizQuestionsRepository;
+        }
 
-//        private async Task<ManagementApiClient> GetManagementApiClientAsync()
-//            => await _auth0ManagementFactory.GetManagementApiClientAsync();
-
-
-//        // GETOS
-
-//        [HttpGet]
-//        public async Task<ActionResult> GetAllSolvingQuizesAsync() {
-//            var solvingQuizes = await Repository.GetAllSolvingQuizes(UserId(User));
-//            var solvingQuizesWithOwners = await IncludeOwnerNickNames(solvingQuizes);
-//            return ToJsonContentResult(solvingQuizesWithOwners);
-//        }
-
-//        [HttpGet("{id}")]
-//        public async Task<ActionResult> GetSolvingQuizByIdAsync(long id) {
-//            var solvingQuiz = await Repository.GetSolvingQuizByIdAsync(UserId(User), id);
-//            await QuizItemWithOwnerNickName(solvingQuiz.Quiz);
-
-//            return ToJsonContentResult(solvingQuiz);
-//        }
-
-//        [HttpGet("{id}/next-question")]
-//        public async Task<ActionResult> GetNextQuestionAsync(long id) {
-//            var userId = UserId(User);
-
-//            var solvingQuiz = await Repository.GetSolvingQuizByIdAsync(userId, id);
-//            if (solvingQuiz?.QuizId == null)
-//                return BadRequest();
-
-//            var questions = await Repository.GetQuestionsByQuizIdAsync(userId, solvingQuiz.QuizId ?? -1, maxTime: solvingQuiz.CreationTime);
-//            var finishedQuestions = await Repository.GetSolvingQuizFinishedQuestions(userId, solvingQuiz.Id);
-//            var remainingQuestions = questions.AsEnumerable().Except(finishedQuestions.Select(f => f.Question));
-            
-//            var randomQuestion = remainingQuestions.AsQueryable()
-//                                                   .RandomElement(p => true)
-//                                                   .FlatVersionProps(solvingQuiz.CreationTime);
-
-//            return ToJsonContentResult(randomQuestion);
-//        }
+        private async Task<ManagementApiClient> GetManagementApiClientAsync()
+            => await _auth0ManagementFactory.GetManagementApiClientAsync();
 
 
-//        // POSTOS
-
-//        [HttpPost("{quizId}")]
-//        public async Task<ActionResult> CreateSolvingQuiz(long quizId) {
-//            if (!ModelState.IsValid) {
-//                return BadRequest(ModelState);
-//            }
-//            var solvingQuiz = new SolvingQuiz {
-//                UserId = UserId(User),
-//                QuizId = quizId
-//            };
-//            await Repository.AddSolvingQuizAsync(solvingQuiz);
-//            return ToJsonContentResult(solvingQuiz);
-//        }
-
-//        [HttpPost("{solvingQuizId}/answer")]
-//        public async Task<ActionResult> AnswerTheQuestion(long solvingQuizId, SolvingQuizAnswer answer) {
-//            var question = await Repository.GetQuestionByIdAsync(UserId(User), answer.QuestionId);
-//            var answers = question.Answers;
-
-//            var correctAnswers = answers.Where(i => i.IsCorrect);
-
-//            //throw NotImplementedException();
-
-//            return Ok();
-//        }
-
-
-//        //// PUTOS
+        // GETOS
 
 
 
-//        // DELETOS
+        // POSTOS
 
-//        [HttpDelete("{id}")]
-//        public async Task<ActionResult> DeleteSolvingQuizAsync(long id) {
-//            var deleted = await Repository.DeleteSolvingQuizAsync(UserId(User), id);
-//            if (deleted) return Ok();
-//            return BadRequest();
-//        }
+        [HttpPost]
+        public async Task<IActionResult> PostSolvedQuiz(UserSolvedQuiz solvedQuiz) {
+            var haveReadAccess = await _quizzesRepository.HaveReadAccessToQuizAsync(UserId, solvedQuiz.QuizId);
+            if (!haveReadAccess)
+                return Forbid();
+
+            var quiz = _quizzesRepository.GetById(solvedQuiz.QuizId); // nie wiem po co;
+            var solvedQuestionIds = solvedQuiz.UserSolvedQuestions.Select(q => q.QuestionId);
+            var questionsWithCorrectAnswers = await _questionsRepository
+                .GetAllByQuizId(solvedQuiz.QuizId, solvedQuiz.CreatedTime, true)
+                .Include(q => q.Versions)
+                .Include(q => q.Answers)
+                .ThenInclude(a => a.Versions)
+                .Where(q => solvedQuestionIds.Contains(q.Id))
+                .Select(q => new {
+                    q.Id,
+                    q.Versions
+                        .Where(v => v.CreationTime <= solvedQuiz.CreatedTime)
+                        .OrderByDescending(v => v.CreationTime)
+                        .FirstOrDefault()
+                        .Value,
+                    Answers = q.Answers
+                        .Where(a => !a.IsDeleted)
+                        .Select(a => new {
+                            a.Id,
+                            a.Versions
+                                .Where(v => v.CreationTime <= solvedQuiz.CreatedTime)
+                                .OrderByDescending(v => v.CreationTime)
+                                .FirstOrDefault()
+                                .Value,
+                            a.Versions
+                                .Where(v => v.CreationTime <= solvedQuiz.CreatedTime)
+                                .OrderByDescending(v => v.CreationTime)
+                                .FirstOrDefault()
+                                .IsCorrect
+                        })
+                })
+                .ToListAsync();
+
+            if (questionsWithCorrectAnswers == null || questionsWithCorrectAnswers.Count == 0)
+                return BadRequest();
+
+            var questionsWithCorrectAnswersAndUserAnswers = questionsWithCorrectAnswers
+                .Select(q => new {
+                    q.Id,
+                    q.Value,
+                    q.Answers,
+                    UserSelectedAnswers = solvedQuiz.UserSolvedQuestions
+                        .First(sq => sq.QuestionId == q.Id)
+                        .SelectedAnswerIds ?? new List<long>()
+                });
+
+            var questionsWithCorrectAnswersAndUserAnswersWithCorrectness = questionsWithCorrectAnswersAndUserAnswers
+                .Select(q => new {
+                    q.Id,
+                    q.Value,
+                    q.Answers,
+                    q.UserSelectedAnswers,
+                    AnsweredCorrectly = q.Answers
+                        .Where(a => a.IsCorrect)
+                        .Select(a => a.Id)
+                        .OrderBy(a => a)
+                        .SequenceEqual(q.UserSelectedAnswers.OrderBy(ua => ua))
+                })
+                .ToList();
+
+            var correctlyAnsweredQuestionsCount = questionsWithCorrectAnswersAndUserAnswersWithCorrectness
+                .Count(q => q.AnsweredCorrectly);
+
+            var badlyAnsweredQuestionsCount = questionsWithCorrectAnswersAndUserAnswersWithCorrectness
+                .Count(q => !q.AnsweredCorrectly);
+
+            return Ok(new {
+                Questions = questionsWithCorrectAnswersAndUserAnswersWithCorrectness,
+                SolvingTime = solvedQuiz.SolvingTime,
+                MaxSolvingTime = solvedQuiz.MaxSolvingTime,
+                CorrectCount = correctlyAnsweredQuestionsCount,
+                BadCount = badlyAnsweredQuestionsCount
+            });
+        }
 
 
-//        // PRIVATE HELPEROS
+        //// PUTOS
 
-//        private async Task<IEnumerable<SolvingQuiz>> IncludeOwnerNickNames(IQueryable<SolvingQuiz> quizes) {
-//            var userIds = quizes.Select(q => q.Quiz.OwnerId)
-//                                .Distinct();
 
-//            if (!userIds.Any())
-//                return quizes;
 
-//            var search = new GetUsersRequest {
-//                SearchEngine = "v3",
-//                Query = $"user_id: ({string.Join(" OR ", userIds)})"
-//            };
-//            var client = await GetManagementApiClientAsync();
-//            var owners = await client.Users.GetAllAsync(search);
+        // DELETOS
 
-//            return from quiz in quizes
-//                   join owner in owners on quiz.Quiz.OwnerId equals owner.UserId into users
-//                   from user in users.DefaultIfEmpty()
-//                   select quiz.IncludeOwnerNickName(user.NickName);
-//        }
 
-//        private async Task<Quiz> QuizItemWithOwnerNickName(Quiz quiz) {
-//            var client = await _auth0ManagementFactory.GetManagementApiClientAsync();
-//            var owner = await client.Users.GetAsync(quiz.OwnerId);
 
-//            if (owner != null)
-//                quiz.OwnerNickName = owner.NickName;
+        // PRIVATE HELPEROS
 
-//            return quiz;
-//        }
-//    }
-//}
+    }
+}
