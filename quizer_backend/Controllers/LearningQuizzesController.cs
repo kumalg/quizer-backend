@@ -172,7 +172,7 @@ namespace quizer_backend.Controllers {
             randomQuestion.FlatVersionProps(maxVersionTime);
             
             var answers = await _answersRepository
-                .GetAllByQuestionId(randomQuestion.Id, maxVersionTime, true)
+                .GetAllByQuestionId(randomQuestion.Id, maxVersionTime, true) //TODO MIN VERSION TIME
                 .Include(a => a.Versions)
                 .Select(a => new {
                     a.Id,

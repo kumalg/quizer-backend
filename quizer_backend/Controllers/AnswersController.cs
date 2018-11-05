@@ -53,7 +53,8 @@ namespace quizer_backend.Controllers {
             var answerVersion = new AnswerVersion {
                 CreationTime = creationTime,
                 QuizQuestionAnswerId = answer.Id,
-                Value = answer.Value
+                Value = answer.Value,
+                IsCorrect = answer.IsCorrect
             };
             await _answerVersionsRepository.Create(answerVersion);
 
@@ -108,7 +109,7 @@ namespace quizer_backend.Controllers {
             if (!access)
                 return NotFound();
 
-            var deleted = await _answersRepository.SilentDelete(answerId);
+            var deleted = await _answersRepository.SilentDelete(answerId, CurrentTime);
             if (!deleted)
                 return NotFound();
 

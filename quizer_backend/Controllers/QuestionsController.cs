@@ -117,7 +117,7 @@ namespace quizer_backend.Controllers {
             if (!access)
                 return NotFound();
             
-            var deleted = await _questionsRepository.SilentDelete(questionId);
+            var deleted = await _questionsRepository.SilentDelete(questionId, CurrentTime);
             if (!deleted)
                 return NotFound();
 

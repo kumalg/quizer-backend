@@ -28,8 +28,13 @@ namespace quizer_backend.Data.Repository {
             if (!allowDeleted)
                 query = query.Where(a => !a.IsDeleted);
 
-            if (maxVersionTime != null)
+            if (maxVersionTime != null) {
                 query = query.Where(q => q.CreationTime <= maxVersionTime);
+
+                if (allowDeleted) {
+                    query = query.Where(q => q.DeletionTime == null || q.DeletionTime.Value > maxVersionTime);
+                }
+            }
 
             return query;
         }
@@ -42,9 +47,10 @@ namespace quizer_backend.Data.Repository {
                 .SingleOrDefaultAsync();
         }
 
-        public async Task<bool> SilentDelete(long id) {
+        public async Task<bool> SilentDelete(long id, long timestamp) {
             var entity = await GetById(id);
             entity.IsDeleted = true;
+            entity.DeletionTime = timestamp;
             return await Update(id, entity);
         }
     }

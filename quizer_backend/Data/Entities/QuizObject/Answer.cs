@@ -9,6 +9,7 @@ namespace quizer_backend.Data.Entities.QuizObject {
         public long QuestionId { get; set; }
         public long CreationTime { get; set; }
         public bool IsDeleted { get; set; } = false;
+        public long? DeletionTime { get; set; }
 
         [JsonIgnore]
         public Question Question { get; set; }
