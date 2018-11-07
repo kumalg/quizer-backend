@@ -77,16 +77,15 @@ namespace quizer_backend.Controllers {
                         .Where(a => !a.IsDeleted)
                         .Select(a => new {
                             a.Id,
-                            a.Versions
+                            Version = a.Versions
                                 .Where(v => v.CreationTime <= solvedQuiz.CreatedTime)
                                 .OrderByDescending(v => v.CreationTime)
                                 .FirstOrDefault()
-                                .Value,
-                            a.Versions
-                                .Where(v => v.CreationTime <= solvedQuiz.CreatedTime)
-                                .OrderByDescending(v => v.CreationTime)
-                                .FirstOrDefault()
-                                .IsCorrect
+                        })
+                        .Select(a => new {
+                            a.Id,
+                            a.Version.Value,
+                            a.Version.IsCorrect
                         })
                 })
                 .ToListAsync();
@@ -108,8 +107,12 @@ namespace quizer_backend.Controllers {
                 .Select(q => new {
                     q.Id,
                     q.Value,
-                    q.Answers,
-                    q.UserSelectedAnswers,
+                    Answers = q.Answers.Select(a => new {
+                        a.Id,
+                        a.Value,
+                        a.IsCorrect,
+                        Selected = q.UserSelectedAnswers.Contains(a.Id)
+                    }),
                     AnsweredCorrectly = q.Answers
                         .Where(a => a.IsCorrect)
                         .Select(a => a.Id)
