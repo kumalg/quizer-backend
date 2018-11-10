@@ -77,6 +77,9 @@ namespace quizer_backend.Data {
 
             modelBuilder.Entity<UserSettings>()
                 .HasKey(q => q.UserId);
+
+            //modelBuilder.Entity<Quiz>()
+            //    .HasKey(q => q.GuidId);
         }
     }
 }

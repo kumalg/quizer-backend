@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Auth0.ManagementApi.Models;
@@ -8,7 +9,7 @@ using quizer_backend.Models;
 
 namespace quizer_backend.Data.Entities.QuizObject {
     public class Quiz {
-        public long Id { get; set; }
+        public Guid Id { get; set; }
         [Required]
         public string Name { get; set; }
         public string OwnerId { get; set; }
@@ -16,6 +17,7 @@ namespace quizer_backend.Data.Entities.QuizObject {
         public long LastModifiedTime { get; set; }
         public int? QuestionsInSolvingQuiz { get; set; }
         public int? MinutesInSolvingQuiz { get; set; }
+        public bool IsPublic { get; set; }
 
         [JsonIgnore]
         public List<Question> Questions { get; set; }

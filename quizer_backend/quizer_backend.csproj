@@ -12,9 +12,13 @@
     <Compile Remove="Data\Migrations\20181028162051_solvingquizanothertables3.Designer.cs" />
     <Compile Remove="Data\Migrations\20181028162514_solvingquizanothertables-nowy.cs" />
     <Compile Remove="Data\Migrations\20181028162514_solvingquizanothertables-nowy.Designer.cs" />
+    <Compile Remove="Data\Migrations\20181107235946_GuidAsId.cs" />
+    <Compile Remove="Data\Migrations\20181107235946_GuidAsId.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Data\Entities\SolvingQuiz\" />
+    <Folder Include="Data\Migrations\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 

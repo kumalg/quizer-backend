@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using Newtonsoft.Json;
@@ -6,7 +7,7 @@ using Newtonsoft.Json;
 namespace quizer_backend.Data.Entities.QuizObject {
     public class Question {
         public long Id { get; set; }
-        public long QuizId { get; set; }
+        public Guid QuizId { get; set; }
         public long CreationTime { get; set; }
         public bool IsDeleted { get; set; } = false;
         public long? DeletionTime { get; set; }

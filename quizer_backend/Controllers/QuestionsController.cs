@@ -9,7 +9,7 @@ namespace quizer_backend.Controllers {
 
     [Route("quiz-questions")]
     public class QuestionsController : QuizerApiControllerBase {
-        
+
         private readonly QuizzesRepository _quizzesRepository;
         private readonly AnswersRepository _answersRepository;
         private readonly QuestionsRepository _questionsRepository;
@@ -63,7 +63,7 @@ namespace quizer_backend.Controllers {
             var creationTime = CurrentTime;
             question.CreationTime = creationTime;
             await _questionsRepository.Create(question);
-            
+
             var questionVersion = new QuestionVersion {
                 CreationTime = creationTime,
                 QuizQuestionId = question.Id,
@@ -94,7 +94,7 @@ namespace quizer_backend.Controllers {
             var access = await _quizzesRepository.HaveWriteAccessToQuiz(UserId, question.QuizId);
             if (!access)
                 return NotFound();
-            
+
             var questionVersion = new QuestionVersion {
                 CreationTime = CurrentTime,
                 QuizQuestionId = questionId,
@@ -116,7 +116,7 @@ namespace quizer_backend.Controllers {
             var access = await _quizzesRepository.HaveWriteAccessToQuiz(UserId, question.QuizId);
             if (!access)
                 return NotFound();
-            
+
             var deleted = await _questionsRepository.SilentDelete(questionId, CurrentTime);
             if (!deleted)
                 return NotFound();

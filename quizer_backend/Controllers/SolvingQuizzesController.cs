@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Auth0.ManagementApi;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Repository;
@@ -52,13 +53,17 @@ namespace quizer_backend.Controllers {
 
         // POSTOS
 
+        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> PostSolvedQuiz(UserSolvedQuiz solvedQuiz) {
-            var haveReadAccess = await _quizzesRepository.HaveReadAccessToQuizAsync(UserId, solvedQuiz.QuizId);
-            if (!haveReadAccess)
-                return Forbid();
+            var isPublic = await _quizzesRepository.IsPublicAsync(solvedQuiz.QuizId);
 
-            var quiz = _quizzesRepository.GetById(solvedQuiz.QuizId); // nie wiem po co;
+            if (!isPublic) {
+                var haveReadAccess = await _quizzesRepository.HaveReadAccessToQuizAsync(UserId, solvedQuiz.QuizId);
+                if (!haveReadAccess)
+                    return Forbid();
+            }
+
             var solvedQuestionIds = solvedQuiz.UserSolvedQuestions.Select(q => q.QuestionId);
             var questionsWithCorrectAnswers = await _questionsRepository
                 .GetAllByQuizId(solvedQuiz.QuizId, solvedQuiz.CreatedTime, true)

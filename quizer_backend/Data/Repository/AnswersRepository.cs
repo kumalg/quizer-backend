@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
@@ -39,7 +40,7 @@ namespace quizer_backend.Data.Repository {
             return query;
         }
 
-        public async Task<long> GetQuizId(long answerId) {
+        public async Task<Guid> GetQuizId(long answerId) {
             return await GetAll()
                 .Where(a => a.Id == answerId)
                 .Include(a => a.Question)

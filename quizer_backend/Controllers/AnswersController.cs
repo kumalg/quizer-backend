@@ -94,7 +94,7 @@ namespace quizer_backend.Controllers {
 
             answer.IsCorrect = newAnswer.IsCorrect;
             answer.Value = newAnswer.Value;
-            
+
             return Ok(answer);
         }
 

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
@@ -20,7 +21,7 @@ namespace quizer_backend.Data.Repository {
                 .Select(a => a.Quiz);
         }
 
-        public async Task<bool> ExistAsync(string userId, long quizId) {
+        public async Task<bool> ExistAsync(string userId, Guid quizId) {
             return await _context.QuizAccessItems
                 .Where(a => a.UserId == userId)
                 .Where(a => a.QuizId == quizId)
@@ -28,7 +29,14 @@ namespace quizer_backend.Data.Repository {
                 .AnyAsync();
         }
 
-        public async Task<bool> HaveReadAccessToQuizAsync(string userId, long quizId) {
+        public async Task<bool> IsPublicAsync(Guid quizId) {
+            return await GetAll()
+                .Where(q => q.Id == quizId)
+                .Select(q => q.IsPublic)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<bool> HaveReadAccessToQuizAsync(string userId, Guid quizId) {
             return await _context.QuizAccessItems
                 .Where(a => a.UserId == userId)
                 .Where(a => a.QuizId == quizId)
@@ -36,7 +44,7 @@ namespace quizer_backend.Data.Repository {
                 .AnyAsync();
         }
 
-        public async Task<bool> HaveWriteAccessToQuiz(string userId, long quizId) {
+        public async Task<bool> HaveWriteAccessToQuiz(string userId, Guid quizId) {
             return await _context.QuizAccessItems
                 .Where(a => a.UserId == userId)
                 .Where(a => a.QuizId == quizId)
@@ -44,7 +52,7 @@ namespace quizer_backend.Data.Repository {
                 .AnyAsync();
         }
 
-        public async Task<bool> HaveOwnerAccessToQuiz(string userId, long quizId) {
+        public async Task<bool> HaveOwnerAccessToQuiz(string userId, Guid quizId) {
             return await _context.QuizAccessItems
                 .Where(a => a.UserId == userId)
                 .Where(a => a.QuizId == quizId)

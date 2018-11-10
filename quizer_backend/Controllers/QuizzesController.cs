@@ -9,6 +9,7 @@ using quizer_backend.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
 using quizer_backend.Data.Repository;
@@ -55,8 +56,20 @@ namespace quizer_backend.Controllers {
             return Ok(quizzesWithOwners);
         }
 
+        [HttpGet("{quizId}/attached-to-me")]
+        public async Task<IActionResult> IsQuizAttachedToUser(Guid quizId) {
+            var attached = await _quizAccessesRepository
+                .GetAll()
+                .Where(a => a.UserId == UserId)
+                .Where(a => a.QuizId == quizId)
+                .Where(a => a.Access != QuizAccessEnum.None)
+                .AnyAsync();
+
+            return Ok(attached);
+        }
+
         [HttpGet("{quizId}")]
-        public async Task<IActionResult> GetQuizByIdAsync(long quizId) {
+        public async Task<IActionResult> GetQuizByIdAsync(Guid quizId) {
             var access = await _quizzesRepository.HaveReadAccessToQuizAsync(UserId, quizId);
             if (!access)
                 return NotFound();
@@ -71,7 +84,7 @@ namespace quizer_backend.Controllers {
         }
 
         [HttpGet("{quizId}/questions")]
-        public async Task<IActionResult> GetQuestionsByQuizId(long quizId, long? maxTime = null) {
+        public async Task<IActionResult> GetQuestionsByQuizId(Guid quizId, long? maxTime = null) {
             var access = await _quizzesRepository.HaveReadAccessToQuizAsync(UserId, quizId);
             if (!access)
                 return NotFound();
@@ -90,12 +103,16 @@ namespace quizer_backend.Controllers {
             return Ok(questions);
         }
 
+        [AllowAnonymous]
         [HttpGet("{id}/solve")]
-        public async Task<IActionResult> GetRandomQuestionsWithQuizByQuizIdAsync(long id) {
-            var userId = UserId;
-            var haveReadAccess = await _quizzesRepository.HaveReadAccessToQuizAsync(userId, id);
-            if (!haveReadAccess)
-                return Forbid();
+        public async Task<IActionResult> GetRandomQuestionsWithQuizByQuizIdAsync(Guid id) {
+            var isPublic = await _quizzesRepository.IsPublicAsync(id);
+
+            if (!isPublic) {
+                var haveReadAccess = await _quizzesRepository.HaveReadAccessToQuizAsync(UserId, id);
+                if (!haveReadAccess)
+                    return Forbid();
+            }
 
             var random = new Random();
             var quiz = await _quizzesRepository.GetById(id);
@@ -181,11 +198,11 @@ namespace quizer_backend.Controllers {
             };
             await _quizAccessesRepository.Create(access);
 
-            return Created("quizes", quiz);
+            return Ok(quiz);
         }
 
         [HttpPost("{quizId}/give-creator-access")]
-        public async Task<IActionResult> GiveCreatorAccess(long quizId, string email) {
+        public async Task<IActionResult> GiveCreatorAccess(Guid quizId, string email) {
             var haveOwnerAccess = await _quizzesRepository.HaveOwnerAccessToQuiz(UserId, quizId);
             if (!haveOwnerAccess)
                 return NotFound();
@@ -209,7 +226,7 @@ namespace quizer_backend.Controllers {
         }
 
         [HttpPost("{quizId}/give-solver-access")]
-        public async Task<IActionResult> GiveSolverAccess(long quizId, string email) {
+        public async Task<IActionResult> GiveSolverAccess(Guid quizId, string email) {
             var haveWriteAccess = await _quizzesRepository.HaveWriteAccessToQuiz(UserId, quizId);
             if (!haveWriteAccess)
                 return NotFound();
@@ -233,10 +250,8 @@ namespace quizer_backend.Controllers {
         }
 
         [HttpPost("{quizId}/stop-co-creating")]
-        public async Task<IActionResult> StopCoCreating(long quizId) {
-            var userId = UserId;
-
-            var access = await _quizAccessesRepository.GetQuizAccessForUserAsync(userId, quizId);
+        public async Task<IActionResult> StopCoCreating(Guid quizId) {
+            var access = await _quizAccessesRepository.GetQuizAccessForUserAsync(UserId, quizId);
             if (access == null || access.Access != QuizAccessEnum.Creator)
                 return BadRequest();
 
@@ -250,8 +265,26 @@ namespace quizer_backend.Controllers {
         }
 
         [HttpPost("{quizId}/leave")]
-        public async Task<IActionResult> Leave(long quizId) {
+        public async Task<IActionResult> Leave(Guid quizId) {
             var result = await _quizAccessesRepository.Delete(UserId, quizId);
+            if (result)
+                return Ok();
+
+            return BadRequest();
+        }
+
+        [HttpPost("{quizId}/join")]
+        public async Task<IActionResult> Join(Guid quizId) {
+            var isPublic = await _quizzesRepository.IsPublicAsync(quizId);
+            if (!isPublic)
+                return BadRequest();
+
+            var access = new QuizAccess {
+                UserId = UserId,
+                QuizId = quizId,
+                Access = QuizAccessEnum.Solver
+            };
+            var result = await _quizAccessesRepository.Create(access);
             if (result)
                 return Ok();
 
@@ -281,7 +314,7 @@ namespace quizer_backend.Controllers {
         //}
 
         [HttpPut("{quizId}")]
-        public async Task<IActionResult> UpdateQuizAsync(long quizId, Quiz newQuiz) {
+        public async Task<IActionResult> UpdateQuizAsync(Guid quizId, Quiz newQuiz) {
             if (string.IsNullOrEmpty(newQuiz.Name))
                 return BadRequest("name cannot be empty");
 
@@ -296,6 +329,7 @@ namespace quizer_backend.Controllers {
             quiz.Name = newQuiz.Name;
             quiz.QuestionsInSolvingQuiz = newQuiz.QuestionsInSolvingQuiz;
             quiz.MinutesInSolvingQuiz = newQuiz.MinutesInSolvingQuiz;
+            quiz.IsPublic = newQuiz.IsPublic;
 
             await _quizzesRepository.Update(quiz.Id, quiz);
             return Ok(quiz);
@@ -305,7 +339,7 @@ namespace quizer_backend.Controllers {
         // DELETOS
 
         [HttpDelete("{quizId}")]
-        public async Task<IActionResult> DeleteQuizAsync(long quizId) {
+        public async Task<IActionResult> DeleteQuizAsync(Guid quizId) {
             var haveOwnerAccess = await _quizzesRepository.HaveOwnerAccessToQuiz(UserId, quizId);
             if (!haveOwnerAccess)
                 return NotFound();

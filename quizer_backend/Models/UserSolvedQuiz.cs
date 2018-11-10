@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace quizer_backend.Models {
     public class UserSolvedQuiz {
-        public long QuizId { get; set; }
+        public Guid QuizId { get; set; }
         public long CreatedTime { get; set; }
         public long SolvingTime { get; set; }
         public long? MaxSolvingTime { get; set; }

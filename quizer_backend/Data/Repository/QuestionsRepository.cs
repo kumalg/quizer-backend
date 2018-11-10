@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
@@ -22,7 +23,7 @@ namespace quizer_backend.Data.Repository {
             return await base.GetById(id);
         }
 
-        public IQueryable<Question> GetAllByQuizId(long quizId, long? maxVersionTime = null, bool allowDeleted = false) {
+        public IQueryable<Question> GetAllByQuizId(Guid quizId, long? maxVersionTime = null, bool allowDeleted = false) {
             var query = GetAll().Where(q => q.QuizId == quizId);
 
             if (!allowDeleted)

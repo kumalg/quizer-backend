@@ -3,17 +3,15 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using quizer_backend.Data;
 
 namespace quizer_backend.Migrations
 {
     [DbContext(typeof(QuizerContext))]
-    [Migration("20181102212213_userSettings")]
-    partial class userSettings
+    partial class QuizerContextModelSnapshot : ModelSnapshot
     {
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -43,7 +41,7 @@ namespace quizer_backend.Migrations
 
                     b.Property<long>("NumberOfQuestions");
 
-                    b.Property<long?>("QuizId");
+                    b.Property<Guid?>("QuizId");
 
                     b.Property<string>("UserId");
 
@@ -59,6 +57,10 @@ namespace quizer_backend.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<long>("BadUserAnswers");
+
+                    b.Property<long>("GoodUserAnswers");
 
                     b.Property<long>("LearningQuizId");
 
@@ -83,7 +85,7 @@ namespace quizer_backend.Migrations
 
                     b.Property<int>("Access");
 
-                    b.Property<long>("QuizId");
+                    b.Property<Guid>("QuizId");
 
                     b.Property<string>("UserId");
 
@@ -101,6 +103,8 @@ namespace quizer_backend.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<long>("CreationTime");
+
+                    b.Property<long?>("DeletionTime");
 
                     b.Property<bool>("IsDeleted");
 
@@ -143,9 +147,11 @@ namespace quizer_backend.Migrations
 
                     b.Property<long>("CreationTime");
 
+                    b.Property<long?>("DeletionTime");
+
                     b.Property<bool>("IsDeleted");
 
-                    b.Property<long>("QuizId");
+                    b.Property<Guid>("QuizId");
 
                     b.HasKey("Id");
 
@@ -176,22 +182,23 @@ namespace quizer_backend.Migrations
 
             modelBuilder.Entity("quizer_backend.Data.Entities.QuizObject.Quiz", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
 
                     b.Property<long>("CreationTime");
 
+                    b.Property<bool>("IsPublic");
+
                     b.Property<long>("LastModifiedTime");
 
-                    b.Property<long?>("MinutesInSolvingQuiz");
+                    b.Property<int?>("MinutesInSolvingQuiz");
 
                     b.Property<string>("Name")
                         .IsRequired();
 
                     b.Property<string>("OwnerId");
 
-                    b.Property<long?>("QuestionsInSolvingQuiz");
+                    b.Property<int?>("QuestionsInSolvingQuiz");
 
                     b.HasKey("Id");
 
@@ -210,9 +217,6 @@ namespace quizer_backend.Migrations
                     b.Property<long>("ReoccurrencesOnStart");
 
                     b.HasKey("UserId");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
 
                     b.ToTable("UserSettings");
                 });

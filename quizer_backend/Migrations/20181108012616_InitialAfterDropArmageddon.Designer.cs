@@ -10,8 +10,8 @@ using quizer_backend.Data;
 namespace quizer_backend.Migrations
 {
     [DbContext(typeof(QuizerContext))]
-    [Migration("20181103130137_moreSpecificUserAnswersCount")]
-    partial class moreSpecificUserAnswersCount
+    [Migration("20181108012616_InitialAfterDropArmageddon")]
+    partial class InitialAfterDropArmageddon
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -43,7 +43,7 @@ namespace quizer_backend.Migrations
 
                     b.Property<long>("NumberOfQuestions");
 
-                    b.Property<long?>("QuizId");
+                    b.Property<Guid?>("QuizId");
 
                     b.Property<string>("UserId");
 
@@ -87,7 +87,7 @@ namespace quizer_backend.Migrations
 
                     b.Property<int>("Access");
 
-                    b.Property<long>("QuizId");
+                    b.Property<Guid>("QuizId");
 
                     b.Property<string>("UserId");
 
@@ -105,6 +105,8 @@ namespace quizer_backend.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<long>("CreationTime");
+
+                    b.Property<long?>("DeletionTime");
 
                     b.Property<bool>("IsDeleted");
 
@@ -147,9 +149,11 @@ namespace quizer_backend.Migrations
 
                     b.Property<long>("CreationTime");
 
+                    b.Property<long?>("DeletionTime");
+
                     b.Property<bool>("IsDeleted");
 
-                    b.Property<long>("QuizId");
+                    b.Property<Guid>("QuizId");
 
                     b.HasKey("Id");
 
@@ -180,22 +184,23 @@ namespace quizer_backend.Migrations
 
             modelBuilder.Entity("quizer_backend.Data.Entities.QuizObject.Quiz", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
 
                     b.Property<long>("CreationTime");
 
+                    b.Property<bool>("IsPublic");
+
                     b.Property<long>("LastModifiedTime");
 
-                    b.Property<long?>("MinutesInSolvingQuiz");
+                    b.Property<int?>("MinutesInSolvingQuiz");
 
                     b.Property<string>("Name")
                         .IsRequired();
 
                     b.Property<string>("OwnerId");
 
-                    b.Property<long?>("QuestionsInSolvingQuiz");
+                    b.Property<int?>("QuestionsInSolvingQuiz");
 
                     b.HasKey("Id");
 
