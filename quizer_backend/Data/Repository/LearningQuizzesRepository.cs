@@ -10,6 +10,12 @@ namespace quizer_backend.Data.Repository {
             _context = context;
         }
 
+        public async Task<bool> Create(LearningQuiz learningQuiz, IQueryable<LearningQuizQuestion> questions) {
+            await _context.Set<LearningQuiz>().AddAsync(learningQuiz);
+            learningQuiz.LearningQuizQuestions.AddRange(questions);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
         public IQueryable<LearningQuiz> GetAllByUserId(string userId) {
             return GetAll().Where(a => a.UserId == userId);
         }

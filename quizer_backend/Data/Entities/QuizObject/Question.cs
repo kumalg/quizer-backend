@@ -15,7 +15,7 @@ namespace quizer_backend.Data.Entities.QuizObject {
         [JsonIgnore]
         public Quiz Quiz { get; set; }
         [JsonIgnore]
-        public List<QuestionVersion> Versions { get; set; }
+        public List<QuestionVersion> Versions { get; set; } = new List<QuestionVersion>();
         [JsonIgnore]
         public List<Answer> Answers { get; set; }
 

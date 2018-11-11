@@ -14,7 +14,7 @@ namespace quizer_backend.Data.Entities.QuizObject {
         [JsonIgnore]
         public Question Question { get; set; }
         [JsonIgnore]
-        public List<AnswerVersion> Versions { get; set; }
+        public List<AnswerVersion> Versions { get; set; } = new List<AnswerVersion>();
         
         [NotMapped]
         public bool IsCorrect { get; set; }

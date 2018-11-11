@@ -21,7 +21,7 @@ namespace quizer_backend.Data.Entities.LearningQuiz {
         public long NumberOfBadAnswers { get; set; } = 0;
 
         public virtual Quiz Quiz { get; set; }
-        public List<LearningQuizQuestion> LearningQuizQuestions { get; set; }
+        public List<LearningQuizQuestion> LearningQuizQuestions { get; set; } = new List<LearningQuizQuestion>();
 
         [NotMapped]
         public double FinishedRatio => IsFinished

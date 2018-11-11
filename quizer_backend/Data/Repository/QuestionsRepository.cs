@@ -12,6 +12,12 @@ namespace quizer_backend.Data.Repository {
             _context = context;
         }
 
+        public async Task<bool> Create(Question question, QuestionVersion version) {
+            await _context.Set<Question>().AddAsync(question);
+            question.Versions.Add(version);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
         public async Task<Question> GetById(long id, bool allowDeleted = false) {
             if (!allowDeleted) {
                 return await GetAll()

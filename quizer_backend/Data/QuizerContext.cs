@@ -19,6 +19,7 @@ namespace quizer_backend.Data {
         public DbSet<LearningQuizQuestion> LearningQuizQuestions { get; set; }
 
         public DbSet<UserSettings> UserSettings { get; set; }
+        public DbSet<AnonymousUser> AnonymousUsers { get; set; }
 
         public QuizerContext(DbContextOptions options) : base(options) { }
 

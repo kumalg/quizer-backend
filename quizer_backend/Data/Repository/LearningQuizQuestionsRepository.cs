@@ -10,8 +10,8 @@ namespace quizer_backend.Data.Repository {
             _context = context;
         }
 
-        public IQueryable<LearningQuizQuestion> GetAllByLearningQuizId(long learningQuizId) {
-            return GetAll().Where(a => a.LearningQuizId == learningQuizId);
+        public IQueryable<LearningQuizQuestion> GetAllByLearningQuizId(long learningQuizId, bool asNoTracking = true) {
+            return GetAll(asNoTracking).Where(a => a.LearningQuizId == learningQuizId);
         }
 
         public async Task<bool> CreateMany(IQueryable<LearningQuizQuestion> entity) {

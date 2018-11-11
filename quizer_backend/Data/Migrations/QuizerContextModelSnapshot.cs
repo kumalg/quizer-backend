@@ -19,6 +19,16 @@ namespace quizer_backend.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+            modelBuilder.Entity("quizer_backend.Data.Entities.AnonymousUser", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AnonymousUsers");
+                });
+
             modelBuilder.Entity("quizer_backend.Data.Entities.LearningQuiz.LearningQuiz", b =>
                 {
                     b.Property<long>("Id")

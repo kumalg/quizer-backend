@@ -54,10 +54,8 @@ namespace quizer_backend {
             services.AddDbContext<QuizerContext>(opt => {
                 opt.UseSqlServer(_config.GetConnectionString("QuizerConnectionString"));
             });
-
-            //services.AddScoped<IQuizerRepository, QuizerRepository>();
-            //services.AddScoped<ILearningQuizzesRepository, LearningQuizzesRepository>();
-
+            
+            services.AddScoped<AnonymousUsersRepository, AnonymousUsersRepository>();
             services.AddScoped<UserSettingsRepository, UserSettingsRepository>();
             services.AddScoped<QuizzesRepository, QuizzesRepository>();
             services.AddScoped<QuestionsRepository, QuestionsRepository>();

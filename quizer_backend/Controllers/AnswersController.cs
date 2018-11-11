@@ -48,17 +48,15 @@ namespace quizer_backend.Controllers {
 
             var creationTime = CurrentTime;
             answer.CreationTime = creationTime;
-            await _answersRepository.Create(answer);
 
-            var answerVersion = new AnswerVersion {
+            var version = new AnswerVersion {
                 CreationTime = creationTime,
-                QuizQuestionAnswerId = answer.Id,
                 Value = answer.Value,
                 IsCorrect = answer.IsCorrect
             };
-            await _answerVersionsRepository.Create(answerVersion);
+            await _answersRepository.Create(answer, version);
 
-            return Created("quiz-question-answers", answer);
+            return Ok(answer);
         }
 
 

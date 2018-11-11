@@ -5,8 +5,11 @@ using System.Threading.Tasks;
 using Auth0.ManagementApi;
 using Auth0.ManagementApi.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using quizer_backend.Data.Entities;
 using quizer_backend.Data.Entities.LearningQuiz;
 using quizer_backend.Data.Entities.QuizObject;
 using quizer_backend.Data.Repository;
@@ -17,9 +20,10 @@ using quizer_backend.Services;
 namespace quizer_backend.Controllers {
 
     [Route("learning-quizes")]
-    public class LearningQuizzesController : QuizerApiControllerBase {
-
+    public class LearningQuizzesController : QuizerApiControllerBase
+    {
         private readonly Auth0ManagementFactory _auth0ManagementFactory;
+        private readonly AnonymousUsersRepository _anonymousUsersRepository;
         private readonly UserSettingsRepository _userSettingsRepository;
         private readonly QuizzesRepository _quizzesRepository;
         private readonly QuizAccessesRepository _quizAccessesRepository;
@@ -29,7 +33,9 @@ namespace quizer_backend.Controllers {
         private readonly LearningQuizQuestionsRepository _learningQuizQuestionsRepository;
 
         public LearningQuizzesController(
+            IConfiguration configuration,
             QuizzesRepository quizzesRepository,
+            AnonymousUsersRepository anonymousUsersRepository,
             UserSettingsRepository userSettingsRepository,
             QuizAccessesRepository quizAccessesRepository,
             QuestionsRepository questionsRepository,
@@ -39,6 +45,7 @@ namespace quizer_backend.Controllers {
             Auth0ManagementFactory auth0ManagementFactory
         ) {
             _auth0ManagementFactory = auth0ManagementFactory;
+            _anonymousUsersRepository = anonymousUsersRepository;
             _userSettingsRepository = userSettingsRepository;
             _quizzesRepository = quizzesRepository;
             _quizAccessesRepository = quizAccessesRepository;
@@ -53,6 +60,26 @@ namespace quizer_backend.Controllers {
 
 
         // GETOS
+
+        [AllowAnonymous]
+        [HttpGet("{quizId}/anonymous-learning-quiz-instances")]
+        public async Task<IActionResult> GetAllLearningQuizInstancesOfQuiz(Guid quizId) {
+            if (UserId != null)
+                return BadRequest("You are logged in");
+
+            var anonymousUserId = await GetAnonymousUserId(Request);
+            if (anonymousUserId == null)
+                return Ok(new long[] { });
+
+            var instances = await _learningQuizzesRepository
+                .GetAll()
+                .Where(l => !l.IsFinished)
+                .Where(l => l.UserId == anonymousUserId)
+                .Where(l => l.QuizId == quizId)
+                .ToListAsync();
+
+            return Ok(instances);
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetAllLearningQuizzesAsync() {
@@ -121,10 +148,13 @@ namespace quizer_backend.Controllers {
             return Ok(learningQuizzesWithOwners);
         }
 
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetLearningQuizByIdAsync(long id) {
+            var userId = UserId ?? await GetAnonymousUserId(Request);
+
             var learningQuiz = await _learningQuizzesRepository
-                .GetAllByUserId(UserId)
+                .GetAllByUserId(userId)
                 .Where(q => q.Id == id)
                 .Include(q => q.Quiz)
                 .SingleOrDefaultAsync();
@@ -132,23 +162,32 @@ namespace quizer_backend.Controllers {
             if (learningQuiz?.QuizId == null)
                 return NotFound();
 
-            var access = await _quizzesRepository.HaveReadAccessToQuizAsync(UserId, learningQuiz.QuizId.Value);
-            if (!access)
-                return Forbid();
+            var isPublic = await _quizzesRepository.IsPublicAsync(learningQuiz.QuizId.Value);
+            if (!isPublic) {
+                var access = await _quizzesRepository.HaveReadAccessToQuizAsync(userId, learningQuiz.QuizId.Value);
+                if (!access)
+                    return Forbid();
+            }
 
             await QuizItemWithOwnerNickName(learningQuiz.Quiz);
             return Ok(learningQuiz);
         }
 
+        [AllowAnonymous]
         [HttpGet("{id}/next-question")]
         public async Task<IActionResult> GetNextQuestionAsync(long id) {
-            var learningQuiz = await _learningQuizzesRepository.GetById(id);
-            if (learningQuiz?.QuizId == null)
-                return BadRequest();
+            var userId = UserId ?? await GetAnonymousUserId(Request);
 
-            var access = await _quizzesRepository.HaveReadAccessToQuizAsync(UserId, learningQuiz.QuizId.Value);
-            if (!access)
-                return Forbid();
+            var learningQuiz = await _learningQuizzesRepository.GetById(id);
+            if (learningQuiz?.QuizId == null || learningQuiz.UserId != userId)
+                return BadRequest();
+            
+            var isPublic = await _quizzesRepository.IsPublicAsync(learningQuiz.QuizId.Value);
+            if (!isPublic) {
+                var access = await _quizzesRepository.HaveReadAccessToQuizAsync(userId, learningQuiz.QuizId.Value);
+                if (!access)
+                    return Forbid();
+            }
 
             var maxVersionTime = learningQuiz.CreationTime;
             var reoccurrences = _learningQuizQuestionsRepository.GetAllByLearningQuizId(learningQuiz.Id);
@@ -194,41 +233,10 @@ namespace quizer_backend.Controllers {
             });
         }
 
+
         // POSTOS
         
-        private async Task<IActionResult> NewAnonymousLearningQuiz(Guid quizId) {
-            var isPublic = await _quizzesRepository.IsPublicAsync(quizId);
-            if (!isPublic)
-                return NotFound();
-
-            var creationTime = CurrentTime;
-
-            var questionsQuery = _questionsRepository
-                .GetAllByQuizId(quizId)
-                .Where(q => q.CreationTime <= creationTime);
-            
-            var settings = await _userSettingsRepository.GetByIdOrDefault(UserId);
-            var questions = questionsQuery
-                .Select(q => new {
-                    Question = q,
-                    Reoccurrences = settings.ReoccurrencesOnStart
-                });
-
-            var learningQuiz = new {
-                CreationTime = creationTime,
-                QuizId = quizId,
-                NumberOfQuestions = questions.Count(),
-                Questions = questions
-            };
-
-            return Ok(learningQuiz);
-        }
-
-        private async Task<IActionResult> NewAuthorizedLearningQuiz(Guid quizId) {
-            var access = await _quizzesRepository.HaveReadAccessToQuizAsync(UserId, quizId);
-            if (!access)
-                return NotFound();
-
+        private async Task<IActionResult> NewAuthorizedLearningQuiz(Guid quizId, string userId) {
             var creationTime = CurrentTime;
 
             var questionsQuery = _questionsRepository
@@ -237,47 +245,76 @@ namespace quizer_backend.Controllers {
 
             var learningQuiz = new LearningQuiz {
                 CreationTime = creationTime,
-                UserId = UserId,
+                UserId = userId,
                 QuizId = quizId,
                 NumberOfQuestions = await questionsQuery.CountAsync()
             };
-            await _learningQuizzesRepository.Create(learningQuiz);
 
-            var settings = await _userSettingsRepository.GetByIdOrDefault(UserId);
+            var settings = await _userSettingsRepository.GetByIdOrDefault(userId);
             var questions = questionsQuery
                 .Select(q => new LearningQuizQuestion {
-                    LearningQuizId = learningQuiz.Id,
                     QuestionId = q.Id,
                     Reoccurrences = settings.ReoccurrencesOnStart
                 });
-            await _learningQuizQuestionsRepository.CreateMany(questions);
+
+            await _learningQuizzesRepository.Create(learningQuiz, questions);
 
             return Ok(learningQuiz);
         }
 
+        private async Task<string> GetAnonymousUserId(HttpRequest request) {
+            var tokenString = request.Cookies["anonymous_user_id_token"];
+
+            if (string.IsNullOrEmpty(tokenString))
+                return null;
+
+            var userId = AnonymousUsersService.GetUserId(tokenString);
+            if (string.IsNullOrEmpty(userId))
+                return "";
+            var userGuid = Guid.Parse(userId);
+            var exist = await _anonymousUsersRepository.ExistAsync(userGuid);
+            return exist ? userId : "";
+        }
+
+        private async Task<string> GenerateAnonymousUserId(HttpResponse response) {
+            var user = new AnonymousUser();
+            await _anonymousUsersRepository.Create(user);
+            var userId = user.Id.ToString();
+            var token = AnonymousUsersService.GenerateTokenFromUserId(userId);
+            response.Cookies.Append("anonymous_user_id_token", token, new CookieOptions {
+                HttpOnly = true
+            });
+            return userId;
+        }
 
         // POSTOS
 
-        //[AllowAnonymous]
+        [AllowAnonymous]
         [HttpPost("{quizId}")]
         public async Task<IActionResult> CreateLearningQuiz(Guid quizId) {
-            //var userId = UserId;
+            var userId = UserId ?? await GetAnonymousUserId(Request) ?? await GenerateAnonymousUserId(Response);
 
-            //if (userId == null)
-            //    return await NewAnonymousLearningQuiz(quizId);
-            return await NewAuthorizedLearningQuiz(quizId);
+            var isPublic = await _quizzesRepository.IsPublicAsync(quizId);
+            if (!isPublic) {
+                var access = await _quizzesRepository.HaveReadAccessToQuizAsync(userId, quizId);
+                if (!access)
+                    return NotFound();
+            }
+
+            return await NewAuthorizedLearningQuiz(quizId, userId);
         }
 
+        [AllowAnonymous]
         [HttpPost("{learningQuizId}/answer")]
         public async Task<IActionResult> AnswerTheQuestion(long learningQuizId, LearningQuizUserAnswer userAnswer) {
+            var userId = UserId ?? await GetAnonymousUserId(Request);
+
             var learningQuiz = await _learningQuizzesRepository.GetById(learningQuizId);
-            if (learningQuiz == null)
+            if (learningQuiz?.QuizId == null || learningQuiz.UserId != userId)
                 return BadRequest();
-            if (learningQuiz.UserId != UserId)
-                return NotFound();
 
             var questionReoccurrences = await _learningQuizQuestionsRepository
-                .GetAllByLearningQuizId(learningQuizId)
+                .GetAllByLearningQuizId(learningQuizId: learningQuizId, asNoTracking: false)
                 .Where(q => q.QuestionId == userAnswer.QuizQuestionId)
                 .SingleOrDefaultAsync();
 
@@ -304,7 +341,7 @@ namespace quizer_backend.Controllers {
                 .OrderBy(i => i)
                 .ToList();
 
-            var settings = await _userSettingsRepository.GetByIdOrDefault(UserId);
+            var settings = await _userSettingsRepository.GetByIdOrDefault(userId);
             var isCorrect = correctAnswers.SequenceEqual(selectedAnswers);
             if (isCorrect) {
                 learningQuiz.NumberOfCorrectAnswers = learningQuiz.NumberOfCorrectAnswers + 1;
@@ -364,15 +401,15 @@ namespace quizer_backend.Controllers {
 
         // PRIVATE HELPEROS
 
-        private async Task<IEnumerable<LearningQuiz>> IncludeOwnerNickNames(IList<LearningQuiz> quizes) {
-            var userIds = quizes
+        private async Task<IEnumerable<LearningQuiz>> IncludeOwnerNickNames(IList<LearningQuiz> quizzes) {
+            var userIds = quizzes
                 .Where(q => q.QuizId != null)
                 .Select(q => q.Quiz.OwnerId)
                 .Distinct()
                 .ToList();
 
             if (!userIds.Any())
-                return quizes;
+                return quizzes;
 
             var search = new GetUsersRequest {
                 SearchEngine = "v3",
@@ -381,13 +418,13 @@ namespace quizer_backend.Controllers {
             var client = await GetManagementApiClientAsync();
             var owners = await client.Users.GetAllAsync(search);
 
-            var yco = from quiz in quizes
+            var yco = from quiz in quizzes
                       where quiz.QuizId != null
                       join owner in owners on quiz.Quiz.OwnerId equals owner.UserId into users
                       from user in users.DefaultIfEmpty()
                       select quiz.IncludeOwnerInQuiz(user);
 
-            return yco.Concat(quizes.Where(q => q.QuizId == null));
+            return yco.Concat(quizzes.Where(q => q.QuizId == null));
         }
 
         private async Task<Quiz> QuizItemWithOwnerNickName(Quiz quiz) {
