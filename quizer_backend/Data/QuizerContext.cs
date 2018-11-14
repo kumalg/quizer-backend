@@ -39,7 +39,7 @@ namespace quizer_backend.Data {
 
             modelBuilder.Entity<QuizAccess>()
                 .HasOne(s => s.Quiz)
-                .WithMany(c => c.Creators)
+                .WithMany(c => c.Accesses)
                 .HasForeignKey(s => s.QuizId)
                 .OnDelete(DeleteBehavior.Cascade);
             

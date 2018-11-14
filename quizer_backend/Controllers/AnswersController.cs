@@ -1,61 +1,31 @@
-﻿using System.Linq;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
-using quizer_backend.Data.Repository;
+using quizer_backend.Data.Services;
 
 namespace quizer_backend.Controllers {
 
     [Route("quiz-question-answers")]
     public class AnswersController : QuizerApiControllerBase {
 
-        private readonly QuizzesRepository _quizzesRepository;
-        private readonly AnswersRepository _answersRepository;
-        private readonly AnswerVersionsRepository _answerVersionsRepository;
-        private readonly QuestionsRepository _questionsRepository;
+        private readonly AnswersService _answersService;
 
-        public AnswersController(
-            QuizzesRepository quizzesRepository,
-            QuestionsRepository questionsRepository,
-            QuestionVersionsRepository questionVersionsRepository,
-            AnswersRepository answersRepository,
-            AnswerVersionsRepository answerVersionsRepository,
-            QuizAccessesRepository quizAccessesRepository
-        ) {
-            _quizzesRepository = quizzesRepository;
-            _questionsRepository = questionsRepository;
-            _answersRepository = answersRepository;
-            _answerVersionsRepository = answerVersionsRepository;
+        public AnswersController(AnswersService answersService) {
+            _answersService = answersService;
         }
 
 
         // POSTOS
 
         [HttpPost]
-        public async Task<IActionResult> CreateAnswerAsync(Answer answer) {
+        public async Task<IActionResult> CreateAnswerAsync(Answer newAnswer) {
             if (!ModelState.IsValid) {
                 return BadRequest(ModelState);
             }
 
-            var question = await _questionsRepository.GetById(answer.QuestionId);
-            if (question == null)
+            var answer = await _answersService.CreateAnswerAsync(newAnswer, UserId);
+            if (answer == null)
                 return BadRequest();
-
-            var access = await _quizzesRepository.HaveWriteAccessToQuiz(UserId, question.QuizId);
-            if (!access)
-                return BadRequest();
-
-            var creationTime = CurrentTime;
-            answer.CreationTime = creationTime;
-
-            var version = new AnswerVersion {
-                CreationTime = creationTime,
-                Value = answer.Value,
-                IsCorrect = answer.IsCorrect
-            };
-            await _answersRepository.Create(answer, version);
-
             return Ok(answer);
         }
 
@@ -64,35 +34,9 @@ namespace quizer_backend.Controllers {
 
         [HttpPut("{answerId}")]
         public async Task<IActionResult> UpdateAnswerAsync(long answerId, Answer newAnswer) {
-            if (string.IsNullOrEmpty(newAnswer.Value))
-                return BadRequest();
-
-            var answer = await _answersRepository
-                .GetAll()
-                .Where(a => a.Id == answerId)
-                .Where(a => !a.IsDeleted)
-                .Include(a => a.Question)
-                .SingleOrDefaultAsync();
-
+            var answer = await _answersService.UpdateAnswerAsync(newAnswer, UserId);
             if (answer == null)
-                return NotFound();
-
-            var access = await _quizzesRepository.HaveWriteAccessToQuiz(UserId, answer.Question.QuizId);
-            if (!access)
                 return BadRequest();
-
-            var answerVersion = new AnswerVersion {
-                CreationTime = CurrentTime,
-                QuizQuestionAnswerId = newAnswer.Id,
-                Value = newAnswer.Value,
-                IsCorrect = newAnswer.IsCorrect
-            };
-
-            await _answerVersionsRepository.Create(answerVersion);
-
-            answer.IsCorrect = newAnswer.IsCorrect;
-            answer.Value = newAnswer.Value;
-
             return Ok(answer);
         }
 
@@ -101,16 +45,9 @@ namespace quizer_backend.Controllers {
 
         [HttpDelete("{answerId}")]
         public async Task<IActionResult> DeleteAnswer(long answerId) {
-            var quizId = await _answersRepository.GetQuizId(answerId);
-
-            var access = await _quizzesRepository.HaveWriteAccessToQuiz(UserId, quizId);
-            if (!access)
+            var result = await _answersService.DeleteAnswerAsync(answerId, UserId);
+            if (!result)
                 return NotFound();
-
-            var deleted = await _answersRepository.SilentDelete(answerId, CurrentTime);
-            if (!deleted)
-                return NotFound();
-
             return Ok();
         }
     }

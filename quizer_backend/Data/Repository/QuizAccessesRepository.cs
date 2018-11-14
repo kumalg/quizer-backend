@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using quizer_backend.Data.Entities;
 
 namespace quizer_backend.Data.Repository {
@@ -19,10 +20,9 @@ namespace quizer_backend.Data.Repository {
                 .SingleOrDefaultAsync();
         }
 
-        public async Task<bool> Delete(string userId, Guid quizId) {
+        public async Task<EntityEntry> Delete(string userId, Guid quizId) {
             var entity = await GetQuizAccessForUserAsync(userId, quizId);
-            _context.Set<QuizAccess>().Remove(entity);
-            return await _context.SaveChangesAsync() > 0;
+            return _context.Set<QuizAccess>().Remove(entity);
         }
     }
 }

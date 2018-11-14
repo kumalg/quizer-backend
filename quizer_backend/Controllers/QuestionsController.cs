@@ -1,31 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
-using quizer_backend.Data.Repository;
+using quizer_backend.Data.Services;
 
 namespace quizer_backend.Controllers {
 
     [Route("quiz-questions")]
     public class QuestionsController : QuizerApiControllerBase {
 
-        private readonly QuizzesRepository _quizzesRepository;
-        private readonly AnswersRepository _answersRepository;
-        private readonly QuestionsRepository _questionsRepository;
-        private readonly QuestionVersionsRepository _questionVersionsRepository;
+        private readonly QuestionsService _questionsService;
 
-        public QuestionsController(
-            QuizzesRepository quizzesRepository,
-            QuestionsRepository questionsRepository,
-            QuestionVersionsRepository questionVersionsRepository,
-            AnswersRepository answersRepository,
-            QuizAccessesRepository quizAccessesRepository
-        ) {
-            _quizzesRepository = quizzesRepository;
-            _questionsRepository = questionsRepository;
-            _questionVersionsRepository = questionVersionsRepository;
-            _answersRepository = answersRepository;
+        public QuestionsController(QuestionsService questionsService) {
+            _questionsService = questionsService;
         }
 
 
@@ -33,17 +19,9 @@ namespace quizer_backend.Controllers {
 
         [HttpGet("{questionId}/answers")]
         public async Task<IActionResult> GetQuizQuestionAnswers(long questionId, long? maxVersionTime = null) {
-            var question = await _questionsRepository.GetById(questionId);
-
-            var access = await _quizzesRepository.HaveReadAccessToQuizAsync(UserId, question.QuizId);
-            if (!access)
+            var answers = await _questionsService.GetQuestionAnswersAsync(questionId, UserId, maxVersionTime);
+            if (answers == null)
                 return NotFound();
-
-            var answers = _answersRepository
-                .GetAllByQuestionId(questionId, maxVersionTime)
-                .Include(a => a.Versions)
-                .Select(a => a.FlatVersionProps(maxVersionTime));
-
             return Ok(answers);
         }
 
@@ -51,25 +29,14 @@ namespace quizer_backend.Controllers {
         // POSTOS
 
         [HttpPost]
-        public async Task<IActionResult> CreateQuizQuestionAsync(Question question) {
+        public async Task<IActionResult> CreateQuizQuestionAsync(Question newQuestion) {
             if (!ModelState.IsValid) {
                 return BadRequest(ModelState);
             }
 
-            var access = await _quizzesRepository.HaveWriteAccessToQuiz(UserId, question.QuizId);
-            if (!access)
+            var question = await _questionsService.CreateQuestionAsync(newQuestion, UserId);
+            if (question == null)
                 return BadRequest();
-
-            var creationTime = CurrentTime;
-            question.CreationTime = creationTime;
-
-            var questionVersion = new QuestionVersion {
-                CreationTime = creationTime,
-                Value = question.Value
-            };
-
-            await _questionsRepository.Create(question, questionVersion);
-
             return Ok(question);
         }
 
@@ -81,27 +48,9 @@ namespace quizer_backend.Controllers {
             if (string.IsNullOrEmpty(value))
                 return BadRequest("value cannot be empty");
 
-            var question = await _questionsRepository
-                .GetAll()
-                .Where(a => a.Id == questionId)
-                .Where(a => !a.IsDeleted)
-                .SingleOrDefaultAsync();
-
+            var question = await _questionsService.UpdateQuestionAsync(questionId, value, UserId);
             if (question == null)
-                return NotFound();
-
-            var access = await _quizzesRepository.HaveWriteAccessToQuiz(UserId, question.QuizId);
-            if (!access)
-                return NotFound();
-
-            var questionVersion = new QuestionVersion {
-                CreationTime = CurrentTime,
-                QuizQuestionId = questionId,
-                Value = value
-            };
-            await _questionVersionsRepository.Create(questionVersion);
-
-            question.Value = value;
+                return BadRequest();
             return Ok(question);
         }
 
@@ -110,16 +59,9 @@ namespace quizer_backend.Controllers {
 
         [HttpDelete("{questionId}")]
         public async Task<IActionResult> DeleteQuestion(long questionId) {
-            var question = await _questionsRepository.GetById(questionId);
-
-            var access = await _quizzesRepository.HaveWriteAccessToQuiz(UserId, question.QuizId);
-            if (!access)
-                return NotFound();
-
-            var deleted = await _questionsRepository.SilentDelete(questionId, CurrentTime);
+            var deleted = await _questionsService.DeleteQuestionAsync(questionId, UserId);
             if (!deleted)
                 return NotFound();
-
             return Ok();
         }
     }

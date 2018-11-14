@@ -14,9 +14,9 @@ namespace quizer_backend.Data.Repository {
             return GetAll(asNoTracking).Where(a => a.LearningQuizId == learningQuizId);
         }
 
-        public async Task<bool> CreateMany(IQueryable<LearningQuizQuestion> entity) {
-            await _context.Set<LearningQuizQuestion>().AddRangeAsync(entity);
-            return await _context.SaveChangesAsync() > 0;
-        }
+        //public async Task<bool> CreateMany(IQueryable<LearningQuizQuestion> entity) {
+        //    await _context.Set<LearningQuizQuestion>().AddRangeAsync(entity);
+        //    return await _context.SaveChangesAsync() > 0;
+        //}
     }
 }

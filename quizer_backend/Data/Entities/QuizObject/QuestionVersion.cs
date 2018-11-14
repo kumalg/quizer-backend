@@ -1,8 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
 namespace quizer_backend.Data.Entities.QuizObject {
-    public class QuestionVersion {
-        public long Id { get; set; }
+    public class QuestionVersion : Entity<long> {
         [Required]
         public long QuizQuestionId { get; set; }
         [Required]

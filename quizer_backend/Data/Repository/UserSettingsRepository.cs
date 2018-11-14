@@ -23,8 +23,9 @@ namespace quizer_backend.Data.Repository {
                 currentSettings.ReoccurrencesOnStart = userSettings.ReoccurrencesOnStart;
                 currentSettings.MaxReoccurrences = userSettings.MaxReoccurrences;
 
-                await Update(userId, currentSettings);
+                Update(currentSettings);
             }
+            await Save();
             return userSettings;
         }
     }

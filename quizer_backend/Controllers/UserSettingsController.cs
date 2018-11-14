@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using quizer_backend.Data.Entities;
-using quizer_backend.Data.Repository;
+using quizer_backend.Data.Services;
 using quizer_backend.Models;
 
 namespace quizer_backend.Controllers {
@@ -9,10 +9,10 @@ namespace quizer_backend.Controllers {
     [Route("user-settings")]
     public class UserSettingsController : QuizerApiControllerBase {
 
-        private readonly UserSettingsRepository _userSettingsRepository;
+        private readonly UsersService _usersService;
 
-        public UserSettingsController(UserSettingsRepository userSettingsRepository) {
-            _userSettingsRepository = userSettingsRepository;
+        public UserSettingsController(UsersService usersService) {
+            _usersService = usersService;
         }
 
 
@@ -20,7 +20,7 @@ namespace quizer_backend.Controllers {
 
         [HttpGet]
         public async Task<UserSettings> GetUserSettings() {
-            return await _userSettingsRepository.GetByIdOrDefault(UserId);
+            return await _usersService.GetUserSettingsByIdAsync(UserId);
         }
 
 
@@ -28,14 +28,9 @@ namespace quizer_backend.Controllers {
 
         [HttpPut]
         public async Task<IActionResult> UpdateUserSettings(NewUserSettings userSettings) {
-            var userId = UserId;
-            var settings = new UserSettings {
-                UserId = userId,
-                ReoccurrencesOnStart = userSettings.ReoccurrencesOnStart,
-                ReoccurrencesIfBad = userSettings.ReoccurrencesIfBad,
-                MaxReoccurrences = userSettings.MaxReoccurrences
-            };
-            await _userSettingsRepository.AddOrUpdate(userId, settings);
+            var settings = await _usersService.UpdateUserSettingsAsync(userSettings, UserId);
+            if (settings == null)
+                return BadRequest();
             return Ok(settings);
         }
     }

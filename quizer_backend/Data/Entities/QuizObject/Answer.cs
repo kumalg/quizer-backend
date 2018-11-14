@@ -4,8 +4,7 @@ using System.Linq;
 using Newtonsoft.Json;
 
 namespace quizer_backend.Data.Entities.QuizObject {
-    public class Answer {
-        public long Id { get; set; }
+    public class Answer : Entity<long> {
         public long QuestionId { get; set; }
         public long CreationTime { get; set; }
         public bool IsDeleted { get; set; } = false;

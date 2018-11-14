@@ -1,42 +1,45 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using quizer_backend.Data.Entities;
 
 namespace quizer_backend.Data.Repository {
-    public class GenericRepository<TEntity> : IGenericRepository<TEntity> where TEntity : class {
+    public abstract class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity {
         private readonly QuizerContext _context;
-        private readonly DbSet<TEntity> _dbSet;
+        private readonly DbSet<T> _dbSet;
 
         public GenericRepository(QuizerContext context) {
             _context = context;
-            _dbSet = context.Set<TEntity>();
+            _dbSet = context.Set<T>();
         }
 
-        public IQueryable<TEntity> GetAll(bool asNoTracking = true) {
-            return asNoTracking ? _dbSet.AsNoTracking() : _context.Set<TEntity>();
+        public virtual IQueryable<T> GetAll(bool asNoTracking = true) {
+            return asNoTracking ? _dbSet.AsNoTracking() : _context.Set<T>();
         }
 
-        public async Task<TEntity> GetById(object id) {
+        public virtual async Task<T> GetById(object id) {
             return await _dbSet.FindAsync(id);
         }
 
-        public async Task<bool> Create(TEntity entity) {
-            await _dbSet.AddAsync(entity);
-            return await _context.SaveChangesAsync() > 0;
+        public virtual async Task<EntityEntry> Create(T entity) {
+            return await _dbSet.AddAsync(entity);
         }
 
-        public async Task<bool> Update(object id, TEntity entity) {
-            _dbSet.Update(entity);
-            return await _context.SaveChangesAsync() > 0;
+        public virtual EntityEntry Update(T entity) {
+            return _dbSet.Update(entity);
         }
 
-        public async Task<bool> Delete(object id) {
+        public virtual EntityEntry Delete(T entity) {
+            return _dbSet.Remove(entity);
+        }
+
+        public virtual async Task<EntityEntry> Delete(object id) {
             var entity = await GetById(id);
-            _dbSet.Remove(entity);
-            return await _context.SaveChangesAsync() > 0;
+            return _dbSet.Remove(entity);
         }
 
-        public async Task<bool> Save() {
+        public virtual async Task<bool> Save() {
             return await _context.SaveChangesAsync() > 0;
         }
     }

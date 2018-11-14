@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using quizer_backend.Data.Entities.LearningQuiz;
 
 namespace quizer_backend.Data.Repository {
@@ -10,21 +11,20 @@ namespace quizer_backend.Data.Repository {
             _context = context;
         }
 
-        public async Task<bool> Create(LearningQuiz learningQuiz, IQueryable<LearningQuizQuestion> questions) {
-            await _context.Set<LearningQuiz>().AddAsync(learningQuiz);
+        public LearningQuiz AddQuestions(LearningQuiz learningQuiz, IQueryable<LearningQuizQuestion> questions) {
             learningQuiz.LearningQuizQuestions.AddRange(questions);
-            return await _context.SaveChangesAsync() > 0;
+            return learningQuiz;
         }
 
         public IQueryable<LearningQuiz> GetAllByUserId(string userId) {
             return GetAll().Where(a => a.UserId == userId);
         }
 
-        public async Task<bool> SetAsFinished(long id, long finishedTime) {
-            var quiz = await GetById(id);
-            quiz.FinishedTime = finishedTime;
-            quiz.IsFinished = true;
-            return await Update(id, quiz);
-        }
+        //public async Task<EntityEntry> SetAsFinished(long id, long finishedTime) {
+        //    var quiz = await GetById(id);
+        //    quiz.FinishedTime = finishedTime;
+        //    quiz.IsFinished = true;
+        //    return Update(quiz);
+        //}
     }
 }

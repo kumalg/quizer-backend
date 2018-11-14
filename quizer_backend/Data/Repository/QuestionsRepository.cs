@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using quizer_backend.Data.Entities.QuizObject;
 
 namespace quizer_backend.Data.Repository {
@@ -12,11 +13,11 @@ namespace quizer_backend.Data.Repository {
             _context = context;
         }
 
-        public async Task<bool> Create(Question question, QuestionVersion version) {
-            await _context.Set<Question>().AddAsync(question);
-            question.Versions.Add(version);
-            return await _context.SaveChangesAsync() > 0;
-        }
+        //public async Task<bool> Create(Question question, QuestionVersion version) {
+        //    await _context.Set<Question>().AddAsync(question);
+        //    question.Versions.Add(version);
+        //    return await _context.SaveChangesAsync() > 0;
+        //}
 
         public async Task<Question> GetById(long id, bool allowDeleted = false) {
             if (!allowDeleted) {
@@ -46,11 +47,11 @@ namespace quizer_backend.Data.Repository {
             return query;
         }
 
-        public async Task<bool> SilentDelete(long id, long timestamp) {
+        public async Task<EntityEntry> SilentDelete(long id, long timestamp) {
             var entity = await GetById(id);
             entity.IsDeleted = true;
             entity.DeletionTime = timestamp;
-            return await Update(id, entity);
+            return Update(entity);
         }
     }
 }

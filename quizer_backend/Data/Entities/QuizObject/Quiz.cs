@@ -8,8 +8,7 @@ using Newtonsoft.Json.Converters;
 using quizer_backend.Models;
 
 namespace quizer_backend.Data.Entities.QuizObject {
-    public class Quiz {
-        public Guid Id { get; set; }
+    public class Quiz : Entity<Guid> {
         [Required]
         public string Name { get; set; }
         public string OwnerId { get; set; }
@@ -22,7 +21,7 @@ namespace quizer_backend.Data.Entities.QuizObject {
         [JsonIgnore]
         public List<Question> Questions { get; set; }
         [JsonIgnore]
-        public List<QuizAccess> Creators { get; set; }
+        public List<QuizAccess> Accesses { get; set; } = new List<QuizAccess>();
 
         [NotMapped]
         public long? MillisecondsInSolvingQuiz => MinutesInSolvingQuiz == null

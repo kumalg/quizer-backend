@@ -18,7 +18,6 @@
 
   <ItemGroup>
     <Folder Include="Data\Entities\SolvingQuiz\" />
-    <Folder Include="Data\Services\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
