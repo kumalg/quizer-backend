@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using quizer_backend.Data.Entities.QuizObject;
+using quizer_backend.Data.Entities.SolvedQuiz;
 using quizer_backend.Data.Repository;
 using quizer_backend.Helpers;
 using quizer_backend.Models;
@@ -15,13 +16,16 @@ namespace quizer_backend.Data.Services {
         private readonly QuizzesRepository _quizzesRepository;
         private readonly QuestionsRepository _questionsRepository;
         private readonly Auth0UsersService _auth0UsersService;
+        private readonly StatisticsService _statisticsService;
 
         public SolvingQuizzesService(
             QuizerContext context,
+            StatisticsService statisticsService,
             Auth0ManagementFactory auth0ManagementFactory
         ) : base(context) {
             _quizzesRepository = new QuizzesRepository(context);
             _questionsRepository = new QuestionsRepository(context);
+            _statisticsService = statisticsService;
             _auth0UsersService = new Auth0UsersService(auth0ManagementFactory);
         }
         
@@ -102,8 +106,9 @@ namespace quizer_backend.Data.Services {
                 }
             };
         }
-
+        
         public async Task<object> CheckSolvedQuizAsync(UserSolvedQuiz solvedQuiz, string userId) {
+            var finishTime = CurrentTime;
             var isPublic = await _quizzesRepository.IsPublicAsync(solvedQuiz.QuizId);
             if (!isPublic) {
                 var haveReadAccess = await _quizzesRepository.HaveReadAccessToQuizAsync(userId, solvedQuiz.QuizId);
@@ -173,18 +178,31 @@ namespace quizer_backend.Data.Services {
                 })
                 .ToList();
 
-            var correctlyAnsweredQuestionsCount = questionsWithCorrectAnswersAndUserAnswersWithCorrectness
+            var correctCount = questionsWithCorrectAnswersAndUserAnswersWithCorrectness
                 .Count(q => q.AnsweredCorrectly);
 
-            var badlyAnsweredQuestionsCount = questionsWithCorrectAnswersAndUserAnswersWithCorrectness
+            var badCount = questionsWithCorrectAnswersAndUserAnswersWithCorrectness
                 .Count(q => !q.AnsweredCorrectly);
+
+            var solvedQuestions = questionsWithCorrectAnswersAndUserAnswersWithCorrectness.Select(q =>
+                new SolvedQuestion {
+                    QuestionId = q.Id,
+                    AnsweredCorrectly = q.AnsweredCorrectly,
+                    Answers = q.Answers.Select(a => new SolvedAnswer {
+                        AnswerId = a.Id,
+                        IsSelected = a.Selected,
+                        IsCorrect = a.IsCorrect
+                    }).ToList()
+                }).ToList();
+
+            await _statisticsService.CreateSolvedQuiz(solvedQuiz, correctCount, badCount, finishTime, solvedQuestions, userId);
 
             return new {
                 Questions = questionsWithCorrectAnswersAndUserAnswersWithCorrectness,
                 SolvingTime = solvedQuiz.SolvingTime,
                 MaxSolvingTime = solvedQuiz.MaxSolvingTime,
-                CorrectCount = correctlyAnsweredQuestionsCount,
-                BadCount = badlyAnsweredQuestionsCount
+                CorrectCount = correctCount,
+                BadCount = badCount
             };
         }
     }

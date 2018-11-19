@@ -10,7 +10,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using quizer_backend.Data;
-using quizer_backend.Data.Repository;
 using quizer_backend.Data.Services;
 using quizer_backend.Services;
 
@@ -61,6 +60,7 @@ namespace quizer_backend {
             services.AddScoped<QuestionsService, QuestionsService>();
             services.AddScoped<QuizzesService, QuizzesService>();
             services.AddScoped<SolvingQuizzesService, SolvingQuizzesService>();
+            services.AddScoped<StatisticsService, StatisticsService>();
             services.AddScoped<UsersService, UsersService>();
 
             services.AddSingleton(new Auth0ManagementFactory(_config));

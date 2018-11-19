@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using quizer_backend.Data.Entities;
 using quizer_backend.Data.Services;
 using quizer_backend.Models;
-using quizer_backend.Services;
 
 namespace quizer_backend.Controllers {
 
@@ -15,10 +11,12 @@ namespace quizer_backend.Controllers {
     public class LearningQuizzesController : QuizerApiControllerBase {
 
         private readonly LearningQuizzesService _learningQuizzesService;
+        private readonly StatisticsService _statisticsService;
         private readonly UsersService _usersService;
 
-        public LearningQuizzesController(LearningQuizzesService learningQuizzesService, UsersService usersService) {
+        public LearningQuizzesController(LearningQuizzesService learningQuizzesService, StatisticsService statisticsService, UsersService usersService) {
             _learningQuizzesService = learningQuizzesService;
+            _statisticsService = statisticsService;
             _usersService = usersService;
         }
 
@@ -94,6 +92,7 @@ namespace quizer_backend.Controllers {
             var learningQuiz = await _learningQuizzesService.CreateLearningQuizAsync(quizId, userId);
             if (learningQuiz == null)
                 return BadRequest();
+            await _statisticsService.IncreaseLearnSessions(quizId);
             return Ok(learningQuiz);
         }
 

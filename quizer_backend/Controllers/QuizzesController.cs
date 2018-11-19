@@ -12,10 +12,12 @@ namespace quizer_backend.Controllers {
     public class QuizzesController : QuizerApiControllerBase {
 
         private readonly QuizzesService _quizzesService;
+        private readonly StatisticsService _statisticsService;
         private readonly SolvingQuizzesService _solvingQuizzesService;
 
-        public QuizzesController(QuizzesService quizzesService, SolvingQuizzesService solvingQuizzesService) {
+        public QuizzesController(QuizzesService quizzesService, StatisticsService statisticsService, SolvingQuizzesService solvingQuizzesService) {
             _quizzesService = quizzesService;
+            _statisticsService = statisticsService;
             _solvingQuizzesService = solvingQuizzesService;
         }
 
@@ -40,6 +42,14 @@ namespace quizer_backend.Controllers {
             if (quiz == null)
                 return NotFound();
             return Ok(quiz);
+        }
+
+        [HttpGet("{quizId}/stats")]
+        public async Task<IActionResult> GetQuizStatisticsByIdAsync(Guid quizId) {
+            var stats = await _statisticsService.GetQuizStatistics(quizId, UserId);
+            if (stats == null)
+                return NotFound();
+            return Ok(stats);
         }
 
         [HttpGet("{quizId}/questions")]

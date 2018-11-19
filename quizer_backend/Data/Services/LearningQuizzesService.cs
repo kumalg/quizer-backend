@@ -220,15 +220,17 @@ namespace quizer_backend.Data.Services {
             var settings = await _userSettingsRepository.GetByIdOrDefault(userId);
             var isCorrect = correctAnswers.SequenceEqual(selectedAnswers);
             if (isCorrect) {
-                learningQuiz.NumberOfCorrectAnswers = learningQuiz.NumberOfCorrectAnswers + 1;
-                questionReoccurrences.Reoccurrences = questionReoccurrences.Reoccurrences - 1;
+                ++learningQuiz.NumberOfCorrectAnswers;
+                --questionReoccurrences.Reoccurrences;
+                ++questionReoccurrences.GoodUserAnswers;
                 if (questionReoccurrences.Reoccurrences == 0) {
                     learningQuiz.NumberOfLearnedQuestions = learningQuiz.NumberOfLearnedQuestions + 1;
                 }
             }
             else {
-                learningQuiz.NumberOfBadAnswers = learningQuiz.NumberOfBadAnswers + 1;
-                questionReoccurrences.Reoccurrences = questionReoccurrences.Reoccurrences + settings.ReoccurrencesIfBad;
+                ++learningQuiz.NumberOfBadAnswers;
+                questionReoccurrences.Reoccurrences += settings.ReoccurrencesIfBad;
+                ++questionReoccurrences.BadUserAnswers;
                 if (questionReoccurrences.Reoccurrences > settings.MaxReoccurrences)
                     questionReoccurrences.Reoccurrences = settings.MaxReoccurrences;
             }

@@ -14,10 +14,21 @@
     <Compile Remove="Data\Migrations\20181028162514_solvingquizanothertables-nowy.Designer.cs" />
     <Compile Remove="Data\Migrations\20181107235946_GuidAsId.cs" />
     <Compile Remove="Data\Migrations\20181107235946_GuidAsId.Designer.cs" />
+    <Compile Remove="Data\Migrations\20181118153105_someStats.cs" />
+    <Compile Remove="Data\Migrations\20181118153105_someStats.Designer.cs" />
+    <Compile Remove="Data\Migrations\20181118153451_someStats2.cs" />
+    <Compile Remove="Data\Migrations\20181118153451_someStats2.Designer.cs" />
+    <Compile Remove="Data\Migrations\20181118154658_someStats3.cs" />
+    <Compile Remove="Data\Migrations\20181118154658_someStats3.Designer.cs" />
+    <Compile Remove="Data\Migrations\20181118160023_solvedquestionsfk.cs" />
+    <Compile Remove="Data\Migrations\20181118160023_solvedquestionsfk.Designer.cs" />
+    <Compile Remove="Data\Migrations\20181118160144_solvedanswersfk.cs" />
+    <Compile Remove="Data\Migrations\20181118160144_solvedanswersfk.Designer.cs" />
+    <Compile Remove="Data\Migrations\20181118162147_concurrency.cs" />
+    <Compile Remove="Data\Migrations\20181118162147_concurrency.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Data\Entities\SolvingQuiz\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 

@@ -10,9 +10,11 @@ namespace quizer_backend.Controllers {
     public class SolvingQuizzesController : QuizerApiControllerBase {
 
         private readonly SolvingQuizzesService _solvingQuizzesService;
+        private readonly StatisticsService _statisticsService;
 
-        public SolvingQuizzesController(SolvingQuizzesService solvingQuizzesService) {
+        public SolvingQuizzesController(SolvingQuizzesService solvingQuizzesService, StatisticsService statisticsService) {
             _solvingQuizzesService = solvingQuizzesService;
+            _statisticsService = statisticsService;
         }
 
 
@@ -24,6 +26,7 @@ namespace quizer_backend.Controllers {
             var result = await _solvingQuizzesService.CheckSolvedQuizAsync(solvedQuiz, UserId);
             if (result == null)
                 return BadRequest();
+            await _statisticsService.IncreaseSolveSessions(solvedQuiz.QuizId);
             return Ok(result);
         }
     }

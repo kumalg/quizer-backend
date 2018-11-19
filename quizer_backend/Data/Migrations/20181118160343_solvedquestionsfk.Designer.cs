@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using quizer_backend.Data;
 
 namespace quizer_backend.Migrations
 {
     [DbContext(typeof(QuizerContext))]
-    partial class QuizerContextModelSnapshot : ModelSnapshot
+    [Migration("20181118160343_solvedquestionsfk")]
+    partial class solvedquestionsfk
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -219,11 +221,9 @@ namespace quizer_backend.Migrations
                 {
                     b.Property<Guid>("Id");
 
-                    b.Property<long>("NumberOfLearnSessions")
-                        .IsConcurrencyToken();
+                    b.Property<long>("NumberOfLearnSessions");
 
-                    b.Property<long>("NumberOfSolveSessions")
-                        .IsConcurrencyToken();
+                    b.Property<long>("NumberOfSolveSessions");
 
                     b.HasKey("Id");
 
@@ -279,10 +279,6 @@ namespace quizer_backend.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<int>("BadCount");
-
-                    b.Property<int>("CorrectCount");
 
                     b.Property<long>("CreationTime");
 

@@ -21,6 +21,8 @@ namespace quizer_backend.Data.Entities.QuizObject {
         [JsonIgnore]
         public List<Question> Questions { get; set; }
         [JsonIgnore]
+        public QuizSessions Sessions { get; set; } = new QuizSessions();
+        [JsonIgnore]
         public List<QuizAccess> Accesses { get; set; } = new List<QuizAccess>();
 
         [NotMapped]
