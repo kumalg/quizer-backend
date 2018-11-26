@@ -11,10 +11,18 @@ namespace quizer_backend.Data.Services {
 
         private readonly AnonymousUsersRepository _anonymousUsersRepository;
         private readonly UserSettingsRepository _userSettingsRepository;
+        private readonly QuizAccessesRepository _quizAccessesRepository;
+        private readonly LearningQuizzesRepository _learningQuizzesRepository;
+        private readonly SolvedQuizRepository _solvedQuizRepository;
+        private readonly QuizzesRepository _quizzesRepository;
 
         public UsersService(QuizerContext context) : base(context) {
             _anonymousUsersRepository = new AnonymousUsersRepository(context);
             _userSettingsRepository = new UserSettingsRepository(context);
+            _quizAccessesRepository = new QuizAccessesRepository(context);
+            _learningQuizzesRepository = new LearningQuizzesRepository(context);
+            _solvedQuizRepository = new SolvedQuizRepository(context);
+            _quizzesRepository = new QuizzesRepository(context);
         }
 
         public async Task<string> GetAnonymousUserId(HttpRequest request) {
@@ -57,6 +65,26 @@ namespace quizer_backend.Data.Services {
             await _userSettingsRepository.AddOrUpdate(userId, settings);
             var result = await Context.SaveChangesAsync() > 0;
             return result ? settings : null;
+        }
+
+        public async Task<bool> DeleteUserDataAsync(string userId) {
+            var settings = await _userSettingsRepository.GetById(userId);
+            if (settings != null)
+                _userSettingsRepository.Delete(settings);
+
+            var accesses = _quizAccessesRepository.GetAllByUserId(userId);
+            _quizAccessesRepository.DeleteRange(accesses);
+            
+            var solvedQuizzes = _solvedQuizRepository.GetAllByUserId(userId);
+            _solvedQuizRepository.DeleteRange(solvedQuizzes);
+
+            var learningQuizzes = _learningQuizzesRepository.GetAllByUserId(userId);
+            _learningQuizzesRepository.DeleteRange(learningQuizzes);
+
+            var quizzes = _quizzesRepository.GetAllByUserId(userId);
+            _quizzesRepository.DeleteRange(quizzes);
+
+            return await Context.SaveChangesAsync() > 0;
         }
     }
 }

@@ -37,8 +37,10 @@ namespace quizer_backend.Data.Entities.QuizObject {
         public QuizAccessEnum Access { get; set; }
 
         public Quiz IncludeOwner(User user) {
-            OwnerPicture = user.Picture;
-            OwnerNickName = user.NickName;
+            if (user != null) {
+                OwnerPicture = user.Picture;
+                OwnerNickName = user.NickName;
+            }
             return this;
         }
     }

@@ -55,8 +55,9 @@ namespace quizer_backend.Data.Services {
             question.FlatVersionProps();
 
             await _questionsRepository.Create(question);
-            var result = await Context.SaveChangesAsync() > 0;
-            return !result ? null : question;
+            return await Context.SaveChangesAsync() > 0
+                ? question
+                : null;
         }
 
         public async Task<Question> UpdateQuestionAsync(long questionId, string value, string userId) {

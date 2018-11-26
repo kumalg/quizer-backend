@@ -10,6 +10,7 @@ namespace quizer_backend.Data.Repository {
         Task<EntityEntry> Create(T entity);
         EntityEntry Update(T entity);
         EntityEntry Delete(T entity);
+        void DeleteRange(IQueryable<T> entities);
         Task<EntityEntry> Delete(object id);
         Task<bool> Save();
     }

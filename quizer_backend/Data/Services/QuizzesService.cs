@@ -82,6 +82,28 @@ namespace quizer_backend.Data.Services {
                 .ToListAsync();
         }
 
+        public async Task<IDictionary<QuizAccessEnum, IList<BasicUser>>> GetQuizUsersAsync(Guid quizId, string userId) {
+            var access = await _quizzesRepository.HaveWriteAccessToQuiz(userId, quizId);
+            if (!access)
+                return null;
+
+            var quiz = await _quizzesRepository
+                .GetAll()
+                .Where(q => q.Id == quizId)
+                .Include(q => q.Accesses)
+                .SingleOrDefaultAsync();
+
+            return quiz?.Accesses
+                .Where(a => a.Access != QuizAccessEnum.None)
+                .GroupBy(a => a.Access)
+                .Select(async a => new KeyValuePair<QuizAccessEnum, IList<BasicUser>>(
+                    a.Key,
+                    (await _auth0UsersService.GetBasicUsersListByIds(a.Select(ac => ac.UserId).ToList())).ToList()
+                ))
+                .Select(a => a.Result)
+                .ToDictionary(a => a.Key, a => a.Value);
+        }
+
 
         // Create/Update/Delete methods
 
@@ -115,7 +137,7 @@ namespace quizer_backend.Data.Services {
                     QuizId = quizId,
                     UserId = user.UserId
                 };
-                await _quizAccessesRepository.Create(access);
+                await _quizAccessesRepository.CreateOrUpdate(access);
             }
 
             return await Context.SaveChangesAsync() > 0;
@@ -147,7 +169,7 @@ namespace quizer_backend.Data.Services {
                 QuizId = quizId,
                 Access = QuizAccessEnum.Solver
             };
-            await _quizAccessesRepository.Create(access);
+            await _quizAccessesRepository.CreateOrUpdate(access);
             return await Context.SaveChangesAsync() > 0;
         }
 

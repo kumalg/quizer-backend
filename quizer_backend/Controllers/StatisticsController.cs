@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using quizer_backend.Data.Entities.SolvedQuiz;
 using quizer_backend.Data.Services;
 
 namespace quizer_backend.Controllers {
@@ -16,21 +15,25 @@ namespace quizer_backend.Controllers {
 
 
         // GETOS
-        
+
         [HttpGet("{id}")]
-        public async Task<SolvedQuiz> GetSolvedQuiz(long id) {
-            return await _statisticsService.GetSolvedQuizById(id);
+        public async Task<IActionResult> GetSolvedQuiz(long id) {
+            var result = await _statisticsService.GetSolvedQuizById(id);
+            if (result == null)
+                return NotFound();
+            return Ok(result);
         }
 
+        [HttpGet("user")]
+        public async Task<IActionResult> GetUserStatistics() {
+            var result = await _statisticsService.GetUserStatistics(UserId);
+            return Ok(result);
+        }
 
-        // PUTOS
-
-        //[HttpPut]
-        //public async Task<IActionResult> UpdateUserSettings(NewUserSettings userSettings) {
-        //    var settings = await _usersService.UpdateUserSettingsAsync(userSettings, UserId);
-        //    if (settings == null)
-        //        return BadRequest();
-        //    return Ok(settings);
-        //}
+        [HttpGet("quiz-list")]
+        public async Task<IActionResult> GetQuizListForStatistics() {
+            var list = await _statisticsService.GetQuizListForStatistics(UserId);
+            return Ok(list);
+        }
     }
 }

@@ -13,5 +13,9 @@ namespace quizer_backend.Data.Repository {
             solvedQuiz.Questions.AddRange(questions);
             return solvedQuiz;
         }
+
+        public IQueryable<SolvedQuiz> GetAllByUserId(string userId) {
+            return GetAll().Where(a => a.UserId == userId);
+        }
     }
 }

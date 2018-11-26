@@ -52,6 +52,14 @@ namespace quizer_backend.Controllers {
             return Ok(stats);
         }
 
+        [HttpGet("{quizId}/users")]
+        public async Task<IActionResult> GetQuizUsersByIdAsync(Guid quizId) {
+            var users = await _quizzesService.GetQuizUsersAsync(quizId, UserId);
+            if (users == null)
+                return BadRequest();
+            return Ok(users);
+        }
+
         [HttpGet("{quizId}/questions")]
         public async Task<IActionResult> GetQuestionsByQuizId(Guid quizId, long? maxTime = null) {
             var questions = await _quizzesService.QuestionsInQuizAsync(quizId, UserId, maxTime);

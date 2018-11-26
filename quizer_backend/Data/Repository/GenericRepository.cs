@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -32,6 +33,10 @@ namespace quizer_backend.Data.Repository {
 
         public virtual EntityEntry Delete(T entity) {
             return _dbSet.Remove(entity);
+        }
+
+        public virtual void DeleteRange(IQueryable<T> entities) {
+            _dbSet.RemoveRange(entities);
         }
 
         public virtual async Task<EntityEntry> Delete(object id) {

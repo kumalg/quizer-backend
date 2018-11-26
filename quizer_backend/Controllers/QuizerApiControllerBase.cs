@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
@@ -14,7 +13,6 @@ namespace quizer_backend.Controllers {
     public class QuizerApiControllerBase : ControllerBase {
 
         protected string UserId => User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-        protected long CurrentTime => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); //TODO przeniesc do base service
 
     }
 }
