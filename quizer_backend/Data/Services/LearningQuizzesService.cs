@@ -131,6 +131,7 @@ namespace quizer_backend.Data.Services {
 
             var answers = await _answersRepository
                 .GetAllByQuestionId(randomQuestion.Id, maxVersionTime, true) //TODO MIN VERSION TIME
+                .Shuffle()
                 .Include(a => a.Versions)
                 .Select(a => new {
                     a.Id,

@@ -8,17 +8,20 @@ using quizer_backend.Data.Entities.QuizObject;
 using quizer_backend.Data.Entities.SolvedQuiz;
 using quizer_backend.Data.Repository;
 using quizer_backend.Models;
+using quizer_backend.Services;
 
 namespace quizer_backend.Data.Services {
     public class StatisticsService : BaseService {
 
+        private readonly Auth0UsersService _auth0UsersService;
         private readonly QuizzesRepository _quizzesRepository;
         private readonly QuizAccessesRepository _quizAccessesRepository;
         private readonly SolvedQuizRepository _solvedQuizRepository;
         private readonly LearningQuizzesRepository _learningQuizzesRepository;
         private readonly QuizSessionsRepository _quizSessionsRepository;
 
-        public StatisticsService(QuizerContext context) : base(context) {
+        public StatisticsService(QuizerContext context, Auth0ManagementFactory auth0ManagementFactory) : base(context) {
+            _auth0UsersService = new Auth0UsersService(auth0ManagementFactory);
             _quizzesRepository = new QuizzesRepository(context);
             _quizAccessesRepository = new QuizAccessesRepository(context);
             _solvedQuizRepository = new SolvedQuizRepository(context);
@@ -76,7 +79,7 @@ namespace quizer_backend.Data.Services {
         }
 
         public async Task<List<SolvedQuiz>> GetSolvedQuizzesByUserId(string userId) {
-            return await _solvedQuizRepository
+            var quizzes = await _solvedQuizRepository
                 .GetAll()
                 .Where(s => s.UserId == userId)
                 .Include(s => s.Quiz)
@@ -87,6 +90,8 @@ namespace quizer_backend.Data.Services {
                 .ThenInclude(q => q.Answers)
                 .ThenInclude(q => q.Answer)
                 .ToListAsync();
+            
+            return (await _auth0UsersService.IncludeOwnerNickNamesInSolvedQuizzes(quizzes)).ToList();
         }
 
         public async Task<List<LearningQuiz>> GetLearningQuizzesByQuizId(Guid quizId) {
@@ -97,30 +102,20 @@ namespace quizer_backend.Data.Services {
                 .Include(q => q.LearningQuizQuestions)
                 .ThenInclude(lq => lq.Question)
                 .ThenInclude(q => q.Versions)
-
-                //.ThenInclude(q => q.Question)
-                //.ThenInclude(q => q.Versions)
-                //.Include(s => s.Questions)
-                //.ThenInclude(q => q.Answers)
-                //.ThenInclude(q => q.Answer)
                 .ToListAsync();
         }
 
         public async Task<List<LearningQuiz>> GetLearningQuizzesByUserId(string userId) {
-            return await _learningQuizzesRepository
+            var quizzes = await _learningQuizzesRepository
                 .GetAll()
                 .Where(l => l.UserId == userId)
                 .Include(l => l.Quiz)
                 .Include(q => q.LearningQuizQuestions)
                 .ThenInclude(lq => lq.Question)
                 .ThenInclude(q => q.Versions)
-
-                //.ThenInclude(q => q.Question)
-                //.ThenInclude(q => q.Versions)
-                //.Include(s => s.Questions)
-                //.ThenInclude(q => q.Answers)
-                //.ThenInclude(q => q.Answer)
                 .ToListAsync();
+
+            return (await _auth0UsersService.IncludeOwnerNickNamesInLearningQuiz(quizzes)).ToList();
         }
 
         public async Task<bool> IncreaseLearnSessions(Guid quizId) {
@@ -200,7 +195,7 @@ namespace quizer_backend.Data.Services {
                     Question = g.Question,
                     Points = g.CorrectCount - g.BadCount
                 })
-                //.Where(q => !(q.BadCount == 0 && q.CorrectCount == 0) )
+                .Where(q => !(q.BadCount == 0 && q.CorrectCount == 0))
                 .OrderByDescending(g => g.Points)
                 .AsQueryable();
 
@@ -249,7 +244,7 @@ namespace quizer_backend.Data.Services {
                     Question = g.Question,
                     Points = g.CorrectCount - g.BadCount
                 })
-                //.Where(q => !(q.BadCount == 0 && q.CorrectCount == 0))
+                .Where(q => !(q.BadCount == 0 && q.CorrectCount == 0))
                 .OrderByDescending(g => g.Points)
                 .AsQueryable();
 
@@ -290,6 +285,7 @@ namespace quizer_backend.Data.Services {
             var solvedCount = solved.Count;
             var solvedDistinctCount = solved.Select(s => s.QuizId).Distinct().Count();
             var mostPopularSolved = solved
+                .Where(s => s.Quiz != null)
                 .GroupBy(s => s.Quiz)
                 .Select(s => new {
                     Quiz = s.Key,
@@ -301,7 +297,10 @@ namespace quizer_backend.Data.Services {
             var learning = await GetLearningQuizzesByUserId(userId);
             var learningCount = learning.Count;
             var learningDistinctCount = learning.Select(s => s.QuizId).Distinct().Count();
+            var learnedCount = learning.Where(l => l.IsFinished).Select(s => s.QuizId).Distinct().Count();
+            var learnedDistinctCount = learning.Where(l => l.IsFinished).Select(s => s.QuizId).Distinct().Count();
             var mostPopularLearning = learning
+                .Where(s => s.Quiz != null)
                 .GroupBy(s => s.Quiz)
                 .Select(s => new {
                     Quiz = s.Key,
@@ -316,18 +315,22 @@ namespace quizer_backend.Data.Services {
                 MostPopularSolved = mostPopularSolved,
                 LearningCount = learningCount,
                 LearningDistinctCount = learningDistinctCount,
-                MostPopularLearning = mostPopularLearning
+                MostPopularLearning = mostPopularLearning,
+                LearnedCount = learnedCount,
+                LearnedDistinctCount = learnedDistinctCount
             };
         }
 
         public async Task<List<Quiz>> GetQuizListForStatistics(string userId) {
-            return await _quizAccessesRepository
+            var quizzes = await _quizAccessesRepository
                 .GetAll()
                 .Where(a => a.UserId == userId)
                 .Where(a => a.Access == QuizAccessEnum.Owner || a.Access == QuizAccessEnum.Creator)
                 .Include(a => a.Quiz)
                 .Select(a => a.Quiz)
                 .ToListAsync();
+
+            return (await _auth0UsersService.IncludeOwnerNickNames(quizzes)).ToList();
         }
     }
 }

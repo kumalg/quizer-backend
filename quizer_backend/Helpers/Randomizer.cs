@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -35,7 +36,18 @@ namespace quizer_backend.Helpers {
         /// <typeparam name="T"></typeparam>
         /// <param name="q"></param>
         /// <returns></returns>
-        public static IOrderedQueryable<T> Shuffle<T>(this IQueryable<T> q) {
+        public static IQueryable<T> Shuffle<T>(this IQueryable<T> q) {
+            var r = new Random();
+            return q.OrderBy(i => r.Next());
+        }
+
+        /// <summary>
+        /// Returns an sequence of shuffled elements using a time-dependent default seed value
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="q"></param>
+        /// <returns></returns>
+        public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> q) {
             var r = new Random();
             return q.OrderBy(i => r.Next());
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Auth0.ManagementApi.Models;
 using Newtonsoft.Json;
 using quizer_backend.Data.Entities.QuizObject;
 
@@ -15,5 +16,10 @@ namespace quizer_backend.Data.Entities.SolvedQuiz {
         public List<SolvedQuestion> Questions { get; set; }
 
         [JsonIgnore] public Quiz Quiz { get; set; }
+
+        public SolvedQuiz IncludeOwnerInQuiz(User user) {
+            Quiz.IncludeOwner(user);
+            return this;
+        }
     }
 }

@@ -5,6 +5,7 @@ using Auth0.ManagementApi;
 using Auth0.ManagementApi.Models;
 using quizer_backend.Data.Entities.LearningQuiz;
 using quizer_backend.Data.Entities.QuizObject;
+using quizer_backend.Data.Entities.SolvedQuiz;
 using quizer_backend.Models;
 
 namespace quizer_backend.Services {
@@ -19,7 +20,7 @@ namespace quizer_backend.Services {
             _auth0ManagementFactory = auth0ManagementApiClient;
         }
 
-        public async Task<IEnumerable<Quiz>> IncludeOwnerNickNames(IList<Quiz> quizzes) {
+        public async Task<IEnumerable<Quiz>> IncludeOwnerNickNames(IEnumerable<Quiz> quizzes) {
             var userIds = quizzes
                 .Select(q => q.OwnerId)
                 .Distinct()
@@ -84,6 +85,28 @@ namespace quizer_backend.Services {
                 select quiz.IncludeOwnerInQuiz(user);
 
             return yco.Concat(quizzes.Where(q => q.QuizId == null));
+        }
+
+        public async Task<IEnumerable<SolvedQuiz>> IncludeOwnerNickNamesInSolvedQuizzes(IList<SolvedQuiz> quizzes) {
+            var userIds = quizzes
+                .Select(q => q.Quiz.OwnerId)
+                .Distinct()
+                .ToList();
+
+            if (!userIds.Any())
+                return quizzes;
+
+            var search = new GetUsersRequest {
+                SearchEngine = "v3",
+                Query = $"user_id: ({string.Join(" OR ", userIds)})"
+            };
+            var client = await GetManagementApiClientAsync();
+            var owners = await client.Users.GetAllAsync(search);
+
+            return from quiz in quizzes
+                join owner in owners on quiz.Quiz.OwnerId equals owner.UserId into users
+                from user in users.DefaultIfEmpty()
+                select quiz.IncludeOwnerInQuiz(user);
         }
 
         public async Task<Quiz> QuizItemWithOwnerNickName(Quiz quiz) {

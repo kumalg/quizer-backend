@@ -55,7 +55,7 @@ namespace quizer_backend.Data.Services {
                         .Value,
                     Answers = q.Answers
                         .Where(a => !a.IsDeleted)
-                        .OrderBy(g => random.Next())
+                        .Shuffle()
                         .Select(a => new SolvingQuizAnswer {
                             Id = a.Id,
                             Value = a.Versions

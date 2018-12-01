@@ -45,9 +45,7 @@ namespace quizer_backend.Data.Services {
             await Context.SaveChangesAsync();
             var userId = user.Id.ToString();
             var token = AnonymousUsersService.GenerateTokenFromUserId(userId);
-            response.Cookies.Append("anonymous_user_id_token", token, new CookieOptions {
-                HttpOnly = true
-            });
+            response.Cookies.Append("anonymous_user_id_token", token);
             return userId;
         }
 
