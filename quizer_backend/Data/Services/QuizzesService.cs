@@ -51,14 +51,18 @@ namespace quizer_backend.Data.Services {
         }
 
         public async Task<Quiz> GetByIdAsync(Guid quizId, string userId) {
-            var access = await _quizzesRepository.HaveReadAccessToQuizAsync(userId, quizId);
-            if (!access)
-                return null;
+            var isPublic = await _quizzesRepository.IsPublicAsync(quizId);
+            if (!isPublic) {
+                var access = await _quizzesRepository.HaveReadAccessToQuizAsync(userId, quizId);
+                if (!access)
+                    return null;
+            }
 
             var quiz = await _quizzesRepository.GetById(quizId);
 
             var userAccess = await _quizAccessesRepository.GetQuizAccessForUserAsync(userId, quizId);
-            quiz.IncludeAccess(userAccess.Access);
+            if (userAccess != null)
+                quiz.IncludeAccess(userAccess.Access);
 
             var quizWithOwnerNickName = await _auth0UsersService.QuizItemWithOwnerNickName(quiz);
             return quizWithOwnerNickName;
@@ -123,10 +127,17 @@ namespace quizer_backend.Data.Services {
         }
 
         public async Task<bool> GiveAccess(Guid quizId, string userId, string email, QuizAccessEnum accessType) {
-            var haveOwnerAccess = await _quizzesRepository.HaveOwnerAccessToQuiz(userId, quizId);
-            if (!haveOwnerAccess)
-                return false;
-            
+            if (accessType == QuizAccessEnum.Solver) {
+                var haveWriteAccess = await _quizzesRepository.HaveWriteAccessToQuiz(userId, quizId);
+                if (!haveWriteAccess)
+                    return false;
+            }
+            else {
+                var haveOwnerAccess = await _quizzesRepository.HaveOwnerAccessToQuiz(userId, quizId);
+                if (!haveOwnerAccess)
+                    return false;
+            }
+
             var users = await _auth0UsersService.GetUsersByEmailAsync(email);
             if (users == null || users.Count == 0)
                 return false;

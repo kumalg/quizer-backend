@@ -24,16 +24,14 @@ namespace quizer_backend.Controllers {
         // GETOS
 
         [AllowAnonymous]
-        [HttpGet("{quizId}/anonymous-learning-quiz-instances")]
+        [HttpGet("{quizId}/learning-quiz-instances")]
         public async Task<IActionResult> GetAllLearningQuizInstancesOfQuiz(Guid quizId) {
-            if (UserId != null)
-                return BadRequest("You are logged in");
+            var userId = UserId ?? await _usersService.GetAnonymousUserId(Request);
 
-            var anonymousUserId = await _usersService.GetAnonymousUserId(Request);
-            if (anonymousUserId == null)
+            if (userId == null)
                 return Ok(new long[] { });
 
-            var instances = await _learningQuizzesService.GetAllLearningQuizInstancesOfQuizAsync(quizId, anonymousUserId);
+            var instances = await _learningQuizzesService.GetAllLearningQuizInstancesOfQuizAsync(quizId, userId);
 
             return Ok(instances);
         }

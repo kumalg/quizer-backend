@@ -55,7 +55,6 @@ namespace quizer_backend.Data.Services {
                         .Value,
                     Answers = q.Answers
                         .Where(a => !a.IsDeleted)
-                        .Shuffle()
                         .Select(a => new SolvingQuizAnswer {
                             Id = a.Id,
                             Value = a.Versions
@@ -63,6 +62,7 @@ namespace quizer_backend.Data.Services {
                                 .FirstOrDefault()
                                 .Value
                         })
+                        .Shuffle()
                         .ToList()
                 })
                 .ToListAsync();

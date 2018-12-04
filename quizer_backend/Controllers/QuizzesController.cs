@@ -36,6 +36,7 @@ namespace quizer_backend.Controllers {
             return Ok(attached);
         }
 
+        [AllowAnonymous]
         [HttpGet("{quizId}")]
         public async Task<IActionResult> GetQuizByIdAsync(Guid quizId) {
             var quiz = await _quizzesService.GetByIdAsync(quizId, UserId);
